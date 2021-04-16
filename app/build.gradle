@@ -36,4 +36,19 @@ dependencies {
     testImplementation 'junit:junit:4.+'
     androidTestImplementation 'androidx.test.ext:junit:1.1.2'
     androidTestImplementation 'androidx.test.espresso:espresso-core:3.3.0'
+
+    // UI stuff
+    implementation 'de.hdodenhof:circleimageview:2.1.0'
+    implementation "androidx.cardview:cardview:1.0.0"
+    implementation "androidx.swiperefreshlayout:swiperefreshlayout:1.1.0"
+    implementation 'com.github.bumptech.glide:glide:3.7.0'
+    implementation 'com.google.android.material:material:1.0.0-rc01'
+    implementation "androidx.recyclerview:recyclerview:1.1.0"
+    implementation "androidx.recyclerview:recyclerview-selection:1.1.0"
+
+    // additional libraries
+    implementation 'com.android.volley:volley:1.2.0'
+    implementation(platform("com.squareup.okhttp3:okhttp-bom:4.9.0"))
+    implementation("com.squareup.okhttp3:okhttp")
+    implementation("com.squareup.okhttp3:logging-interceptor")
 }
