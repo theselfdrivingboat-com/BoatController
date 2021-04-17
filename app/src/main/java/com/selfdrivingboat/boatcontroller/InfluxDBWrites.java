@@ -1,5 +1,6 @@
 package com.selfdrivingboat.boatcontroller;
 
+import android.location.Location;
 import android.os.StrictMode;
 import android.util.Log;
 
@@ -81,6 +82,18 @@ public class InfluxDBWrites {
         HTTPwrite("battery",
                 "device", "MPU6050",
                 "V", String.valueOf(battery_level));
+    }
+
+    public static void sendGPS(Location location){
+        HTTPwrite("GPS",
+                "value", "BV5500",
+                "speed", String.valueOf(location.getSpeed()));
+        HTTPwrite("GPS",
+                "value", "BV5500",
+                "latitude", String.valueOf(location.getLatitude()));
+        HTTPwrite("GPS",
+                "value", "BV5500",
+                "longitude", String.valueOf(location.getLongitude()));
     }
 
     private static void HTTPwrite(

@@ -1,7 +1,12 @@
 package com.selfdrivingboat.boatcontroller;
 
+import android.Manifest;
+import android.content.pm.PackageManager;
+import android.location.Location;
 import android.os.AsyncTask;
 import android.util.Log;
+
+import androidx.core.app.ActivityCompat;
 
 import com.android.volley.Request;
 import com.android.volley.RequestQueue;
@@ -15,7 +20,10 @@ import org.json.JSONObject;
 
 import java.net.URL;
 import java.util.Arrays;
+import java.util.concurrent.Executor;
 import java.util.concurrent.TimeUnit;
+
+import com.google.android.gms.tasks.OnSuccessListener;
 
 public class SelfDriving {
 
@@ -27,46 +35,48 @@ public class SelfDriving {
     int data_size = 10;
     float[] data = new float[data_size];
 
-    private void boatStop(){
+    Location last_location;
+
+    private void boatStop() {
         sendStringToESP32("5");
     }
 
-    private void boatForward(){
+    private void boatForward() {
         sendStringToESP32("1");
     }
 
-    private void boatBackward(){
+    private void boatBackward() {
         sendStringToESP32("2");
     }
 
-    private void boatLeft(){
+    private void boatLeft() {
         sendStringToESP32("3");
     }
 
-    private void boatRight(){
+    private void boatRight() {
         sendStringToESP32("4");
     }
 
-    private void boatLowPower(){
+    private void boatLowPower() {
         sendStringToESP32("6");
     }
 
-    private void boatMidPower(){
+    private void boatMidPower() {
         sendStringToESP32("7");
     }
 
-    private void boatHighPower(){
+    private void boatHighPower() {
         sendStringToESP32("8");
     }
 
-    private void boatTestMotors(){
+    private void boatTestMotors() {
         boatForward();
         boatStop();
         boatBackward();
     }
 
-    private void runHerokuCommand(String command){
-        switch(command) {
+    private void runHerokuCommand(String command) {
+        switch (command) {
             case "FORWARD":
                 boatForward();
                 break;
@@ -87,7 +97,7 @@ public class SelfDriving {
         }
     }
 
-    private void sendStringToESP32(String value){
+    private void sendStringToESP32(String value) {
         Log.i("alex", "sleeping 3");
         try {
             TimeUnit.SECONDS.sleep(3);
@@ -99,7 +109,7 @@ public class SelfDriving {
         activity.btSendBytes(value.getBytes());
     }
 
-    private void selfdriving_step(){
+    private void selfdriving_step() {
         // Initialize a new RequestQueue instance
         Log.i("selfdriving", "new step");
         RequestQueue requestQueue;
@@ -113,7 +123,7 @@ public class SelfDriving {
                     public void onResponse(JSONObject response) {
                         try {
                             Log.i("selfdriving", "heorku renponse");
-                            if(response.getString("command") == "null"){
+                            if (response.getString("command") == "null") {
                                 last_command = "null";
                             } else {
                                 testing_motors = false;
@@ -159,19 +169,19 @@ public class SelfDriving {
 
     }
 
-    private void testDrive(){
-        sendStringToESP32( "7");
-        sendStringToESP32( "1");
-        sendStringToESP32( "5");
+    private void testDrive() {
+        sendStringToESP32("7");
+        sendStringToESP32("1");
+        sendStringToESP32("5");
     }
 
-    public void start(MainActivity mainActivity){
+    public void start(MainActivity mainActivity) {
         Log.i("selfdriving", "starting..");
         activity = mainActivity;
         selfdriving_step();
     }
 
-    public void sendBLData(){
+    public void sendBLData() {
 
         class sendDataTask extends AsyncTask<Void, Void, Boolean> {
             @Override
@@ -182,6 +192,9 @@ public class SelfDriving {
                 InfluxDBWrites.sendMPU6050Angle(data[6], data[7]);
                 InfluxDBWrites.sendMPU6050Temperature(data[8]);
                 InfluxDBWrites.sendBatteryLevel(data[9]);
+                if(last_location != null){
+                    InfluxDBWrites.sendGPS(last_location);
+                }
                 return true;
             }
 
@@ -198,10 +211,38 @@ public class SelfDriving {
 
     }
 
-    public void receiveBLData(float val){
+
+
+    private void getGPS(){
+        if (ActivityCompat.checkSelfPermission(activity.getApplicationContext(), Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED && ActivityCompat.checkSelfPermission(activity.getApplicationContext(), Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
+            // TODO: Consider calliVg
+            //    ActivityCompat#requestPermissions
+            // here to request the missing permissions, and then overriding
+            //   public void onRequestPermissionsResult(int requestCode, String[] permissions,
+            //                                          int[] grantResults)
+            // to handle the case where the user grants the permission. See the documentation
+            // for ActivityCompat#requestPermissions for more details.
+            return;
+        }
+        activity.fusedLocationClient.getLastLocation()
+                .addOnSuccessListener(activity, new OnSuccessListener<Location>() {
+                    @Override
+                    public void onSuccess(Location location) {
+                        Log.i("selfdriving", "received GPS location");
+                        last_location = location;
+                        if (location == null) {
+                            Log.e("selfdriving", "no location!");
+                        }
+                    }
+                });
+
+    }
+
+    public void receiveBLData(float val) {
         data[data_cursor] = val;
         data_cursor += 1;
-        if (data_cursor == data_size){
+        if (data_cursor == data_size) {
+            getGPS();
             sendBLData();
             data_cursor = 0;
         }

@@ -32,9 +32,14 @@ import android.widget.ToggleButton;
 
 import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.core.app.ActivityCompat;
 import androidx.recyclerview.widget.GridLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 import androidx.swiperefreshlayout.widget.SwipeRefreshLayout;
+
+import com.google.android.gms.location.FusedLocationProviderClient;
+import com.google.android.gms.location.LocationRequest;
+import com.google.android.gms.location.LocationServices;
 
 import org.json.JSONException;
 
@@ -45,8 +50,8 @@ import java.util.List;
 import java.util.concurrent.TimeUnit;
 
 
-public class MainActivity extends AppCompatActivity implements  OnBluetoothDeviceClickedListener {
-    private final int REQUEST_PERMISSION_ACCESS_FINE_LOCATION=1;
+public class MainActivity extends AppCompatActivity implements OnBluetoothDeviceClickedListener {
+    private final int REQUEST_PERMISSION_ACCESS_FINE_LOCATION = 1;
 
 
     private static final int REQUEST_CONNECT = 1;
@@ -67,12 +72,17 @@ public class MainActivity extends AppCompatActivity implements  OnBluetoothDevic
     private String mDeviceName;
     private String mDeviceAddress;
 
+
     private SelfDriving selfDriving = new SelfDriving();
+    public FusedLocationProviderClient fusedLocationClient;
+
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         InfluxDBWrites.sendBluetoothStatus(MainActivity.this);
+
+        fusedLocationClient = LocationServices.getFusedLocationProviderClient(this);
 
 
         setContentView(R.layout.activity_main);
@@ -123,6 +133,7 @@ public class MainActivity extends AppCompatActivity implements  OnBluetoothDevic
                 }
         }
     }
+
     private void initView() {
         recyclerView = (RecyclerView) findViewById(R.id.recycler_view);
         swipeRefresh = (SwipeRefreshLayout) findViewById(R.id.swipe_refresh);
@@ -163,7 +174,7 @@ public class MainActivity extends AppCompatActivity implements  OnBluetoothDevic
         public void onServiceConnected(ComponentName componentName, IBinder service) {
             mBluetoothLeService = ((BluetoothLeService.LocalBinder) service).getService();
             if (!mBluetoothLeService.initialize()) {
-                Log.e("MainActivity","Unable to initialize Bluetooth");
+                Log.e("MainActivity", "Unable to initialize Bluetooth");
             }
         }
 
@@ -193,7 +204,7 @@ public class MainActivity extends AppCompatActivity implements  OnBluetoothDevic
     @Override
     public void onBluetoothDeviceClicked(String name, String address) {
 
-        Log.i("MainActivity","Attempt to connect device : " + name + "(" + address + ")");
+        Log.i("MainActivity", "Attempt to connect device : " + name + "(" + address + ")");
         mDeviceName = name;
         mDeviceAddress = address;
 
@@ -267,10 +278,10 @@ public class MainActivity extends AppCompatActivity implements  OnBluetoothDevic
         public void onLeScanInitFailure(int failureCode) {
             Log.i("MainActivity", "onLeScanInitFailure()");
             switch (failureCode) {
-                case BluetoothScan.SCAN_FEATURE_ERROR :
+                case BluetoothScan.SCAN_FEATURE_ERROR:
                     showMsg("scan_feature_error");
                     break;
-                case BluetoothScan.SCAN_ADAPTER_ERROR :
+                case BluetoothScan.SCAN_ADAPTER_ERROR:
                     showMsg("scan_adapter_error");
                     break;
                 default:
@@ -282,14 +293,14 @@ public class MainActivity extends AppCompatActivity implements  OnBluetoothDevic
         public void onLeScanInitSuccess(int successCode) {
             Log.i("MainActivity", "onLeScanInitSuccess()");
             switch (successCode) {
-                case BluetoothScan.SCAN_BEGIN_SCAN :
-                    Log.i("MainActivity","successCode : " + successCode);
+                case BluetoothScan.SCAN_BEGIN_SCAN:
+                    Log.i("MainActivity", "successCode : " + successCode);
                     break;
-                case BluetoothScan.SCAN_NEED_ENADLE :
+                case BluetoothScan.SCAN_NEED_ENADLE:
                     Intent enableBtIntent = new Intent(BluetoothAdapter.ACTION_REQUEST_ENABLE);
                     startActivityForResult(enableBtIntent, REQUEST_ENABLE_BT);
                     break;
-                case BluetoothScan.AUTO_ENABLE_FAILURE :
+                case BluetoothScan.AUTO_ENABLE_FAILURE:
                     showMsg("auto_enable_bluetooth_error");
                     break;
                 default:
@@ -299,14 +310,14 @@ public class MainActivity extends AppCompatActivity implements  OnBluetoothDevic
 
         @Override
         public void onLeScanResult(BluetoothDevice device, int rssi, byte[] scanRecord) {
-            if(!mBluetoothDeviceList.contains(device) && device != null) {
+            if (!mBluetoothDeviceList.contains(device) && device != null) {
                 mBluetoothDeviceList.add(device);
                 mBluetoothDeviceAdapter.notifyDataSetChanged();
 
-                Log.i("MainActivity","notifyDataSetChanged() " + "BluetoothName :　" + device.getName() +
+                Log.i("MainActivity", "notifyDataSetChanged() " + "BluetoothName :　" + device.getName() +
                         "  BluetoothAddress :　" + device.getAddress());
 
-                if( "MyESP32".equals(device.getName())) {
+                if ("MyESP32".equals(device.getName())) {
                     Log.i("alex", "we connected to MyESP32.. automatically connecting");
 
                     if (mBluetoothLeService != null) {
@@ -355,4 +366,5 @@ public class MainActivity extends AppCompatActivity implements  OnBluetoothDevic
             e.printStackTrace();
         }
     }
+
 }
