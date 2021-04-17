@@ -242,41 +242,20 @@ public class MainActivity extends AppCompatActivity implements  OnBluetoothDevic
 
                 Log.i("alex", "service discovered");
                 mBluetoothLeService.getSupportedGattServices();
-                //selfDriving.start(MainActivity.this);
+                selfDriving.start(MainActivity.this);
 
             } else if (BluetoothLeService.ACTION_DATA_AVAILABLE.equals(action)) {
                 final byte[] data = intent.getByteArrayExtra(BluetoothLeService.EXTRA_DATA);
                 ByteBuffer buffer = ByteBuffer.wrap(data);
                 buffer.order(ByteOrder.LITTLE_ENDIAN);
                 float received = buffer.getFloat();
-                Log.i("MainActivity", String.valueOf(received));
+                Log.i("MainActivity", "BLE notify " + received);
+                selfDriving.receiveBLData(received);
             }
         }
     };
 
 
-
-    private void inputMessage() {
-        AlertDialog.Builder builder = new AlertDialog.Builder(this);
-        builder.setTitle("Message to send");
-
-        final EditText input = new EditText(this);
-
-        input.setInputType(InputType.TYPE_CLASS_TEXT);
-        builder.setView(input);
-
-        builder.setPositiveButton("OK", new DialogInterface.OnClickListener() {
-            @Override
-            public void onClick(DialogInterface dialog, int which) {
-                String text = input.getText().toString();
-                Log.i("alex",text);
-                // sendStringToESP32(text);
-            }
-        });
-
-
-        builder.show();
-    }
     public void btSendBytes(byte[] data) {
         Log.i("alex", String.valueOf(data));
         if (mBluetoothLeService != null &&

@@ -21,6 +21,9 @@ public class SelfDriving {
     String last_command; // "FORWARD", .. , ""
     int clock = 10;
     boolean testing_motors = false;
+    int data_cursor = 0;
+    int data_size = 9;
+    float[] data = new float[data_size];
 
     private void boatStop(){
         sendStringToESP32("5");
@@ -96,6 +99,7 @@ public class SelfDriving {
 
     private void selfdriving_step(){
         // Initialize a new RequestQueue instance
+        Log.i("selfdriving", "new step");
         RequestQueue requestQueue;
         requestQueue = Volley.newRequestQueue(activity.getApplicationContext());
 
@@ -106,6 +110,7 @@ public class SelfDriving {
                     @Override
                     public void onResponse(JSONObject response) {
                         try {
+                            Log.i("selfdriving", "heorku renponse");
                             if(response.getString("command") == "null"){
                                 last_command = "null";
                             } else {
@@ -119,6 +124,10 @@ public class SelfDriving {
                                 boatTestMotors();
                             }
                             runHerokuCommand(last_command);
+                            // TODO: this sleeps here are terrible
+                            // I/Choreographer: Skipped 1627 frames!  The application may be doing too much work on its main thread.
+                            // we need to keep getting data and make motor sleeps
+                            // ask siddarth
                             try {
                                 TimeUnit.SECONDS.sleep(1);
                             } catch (InterruptedException e) {
@@ -135,13 +144,15 @@ public class SelfDriving {
                         } catch (JSONException e) {
                             Log.e("selfdriving", "no command key from heroku! server down or corrupted?");
                             e.printStackTrace();
+                            selfdriving_step();
                         }
                     }
                 }, new Response.ErrorListener() {
 
                     @Override
                     public void onErrorResponse(VolleyError error) {
-                        // TODO: Handle error
+                        Log.e("selfdriving", String.valueOf(error));
+                        selfdriving_step();
                     }
                 });
 
@@ -161,5 +172,21 @@ public class SelfDriving {
         Log.i("selfdriving", "starting..");
         activity = mainActivity;
         selfdriving_step();
+    }
+
+    public void sendBLData(){
+        InfluxDBWrites.sendMPU6050Accelerometer(data[0], data[1], data[2]);
+        InfluxDBWrites.sendMPU6050Gyroscope(data[3], data[4], data[5]);
+        InfluxDBWrites.sendMPU6050Angle(data[6], data[7]);
+        InfluxDBWrites.sendMPU6050Temperature(data[8]);
+    }
+
+    public void receiveBLData(float val){
+        data[data_cursor] = val;
+        data_cursor += 1;
+        if (data_cursor == data_size){
+            sendBLData();
+            data_cursor = 0;
+        }
     }
 }

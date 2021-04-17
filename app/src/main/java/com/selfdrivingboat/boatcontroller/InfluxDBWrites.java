@@ -38,6 +38,45 @@ public class InfluxDBWrites {
                 "status", "\"" + activity.mConnectionState + "\"");
     }
 
+    public static void sendMPU6050Accelerometer(float x, float y, float z){
+        HTTPwrite("accelerometer",
+                "device", "MPU6050",
+                "x", String.valueOf(x));
+        HTTPwrite("accelerometer",
+                "device", "MPU6050",
+                "y", String.valueOf(y));
+        HTTPwrite("accelerometer",
+                "device", "MPU6050",
+                "z", String.valueOf(z));
+    }
+
+    public static void sendMPU6050Gyroscope(float x, float y, float z){
+        HTTPwrite("gyroscope",
+                "device", "MPU6050",
+                "x", String.valueOf(x));
+        HTTPwrite("gyroscope",
+                "device", "MPU6050",
+                "y", String.valueOf(y));
+        HTTPwrite("gyroscope",
+                "device", "MPU6050",
+                "z", String.valueOf(z));
+    }
+
+    public static void sendMPU6050Angle(float x, float y){
+        HTTPwrite("angle",
+                "device", "MPU6050",
+                "x", String.valueOf(x));
+        HTTPwrite("angle",
+                "device", "MPU6050",
+                "y", String.valueOf(y));
+    }
+
+    public static void sendMPU6050Temperature(float temp){
+        HTTPwrite("temperature",
+                "device", "MPU6050",
+                "x", String.valueOf(temp));
+    }
+
     private static void HTTPwrite(
             String measurement,
             String tagk,
