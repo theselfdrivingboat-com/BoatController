@@ -22,7 +22,7 @@ public class SelfDriving {
     int clock = 10;
     boolean testing_motors = false;
     int data_cursor = 0;
-    int data_size = 9;
+    int data_size = 10;
     float[] data = new float[data_size];
 
     private void boatStop(){
@@ -179,6 +179,7 @@ public class SelfDriving {
         InfluxDBWrites.sendMPU6050Gyroscope(data[3], data[4], data[5]);
         InfluxDBWrites.sendMPU6050Angle(data[6], data[7]);
         InfluxDBWrites.sendMPU6050Temperature(data[8]);
+        InfluxDBWrites.sendBatteryLevel(data[9]);
     }
 
     public void receiveBLData(float val){

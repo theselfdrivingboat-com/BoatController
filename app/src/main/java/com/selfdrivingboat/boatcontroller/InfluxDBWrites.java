@@ -77,6 +77,12 @@ public class InfluxDBWrites {
                 "x", String.valueOf(temp));
     }
 
+    public static void sendBatteryLevel(float battery_level){
+        HTTPwrite("battery",
+                "device", "MPU6050",
+                "V", String.valueOf(battery_level));
+    }
+
     private static void HTTPwrite(
             String measurement,
             String tagk,
