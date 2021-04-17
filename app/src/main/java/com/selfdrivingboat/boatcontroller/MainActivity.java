@@ -230,9 +230,6 @@ public class MainActivity extends AppCompatActivity implements  OnBluetoothDevic
                 mConnectionState = BluetoothLeService.ACTION_GATT_CONNECTED;
                 swipeRefresh.setRefreshing(false);
 
-                //inputMessage();
-
-
             } else if (BluetoothLeService.ACTION_GATT_DISCONNECTED.equals(action)) {
                 Log.i("MainActivity", "ACTION_GATT_DISCONNECTED!!!");
                 showMsg("disconnected");
@@ -242,6 +239,7 @@ public class MainActivity extends AppCompatActivity implements  OnBluetoothDevic
 
                 Log.i("alex", "service discovered");
                 mBluetoothLeService.getSupportedGattServices();
+                // this spawn recurrent async tasks with volley
                 selfDriving.start(MainActivity.this);
 
             } else if (BluetoothLeService.ACTION_DATA_AVAILABLE.equals(action)) {
