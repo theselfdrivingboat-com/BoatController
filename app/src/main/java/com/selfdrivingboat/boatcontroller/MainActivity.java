@@ -38,6 +38,8 @@ import androidx.swiperefreshlayout.widget.SwipeRefreshLayout;
 
 import org.json.JSONException;
 
+import java.nio.ByteBuffer;
+import java.nio.ByteOrder;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
@@ -71,6 +73,7 @@ public class MainActivity extends AppCompatActivity implements  OnBluetoothDevic
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         InfluxDBWrites.sendBluetoothStatus(MainActivity.this);
+
 
         setContentView(R.layout.activity_main);
 
@@ -239,21 +242,14 @@ public class MainActivity extends AppCompatActivity implements  OnBluetoothDevic
 
                 Log.i("alex", "service discovered");
                 mBluetoothLeService.getSupportedGattServices();
-                selfDriving.start(MainActivity.this);
+                //selfDriving.start(MainActivity.this);
 
             } else if (BluetoothLeService.ACTION_DATA_AVAILABLE.equals(action)) {
                 final byte[] data = intent.getByteArrayExtra(BluetoothLeService.EXTRA_DATA);
-
-                showMsg("Got string : " + new String(data));
-
-                if (data != null && data.length > 0) {
-                    final StringBuilder stringBuilder = new StringBuilder(data.length);
-                    for (byte byteChar : data) {
-                        stringBuilder.append(String.format("%02X ", byteChar));
-                    }
-
-                    Log.i("MainActivity","Get string(ASCII) : " + stringBuilder.toString());
-                }
+                ByteBuffer buffer = ByteBuffer.wrap(data);
+                buffer.order(ByteOrder.LITTLE_ENDIAN);
+                float received = buffer.getFloat();
+                Log.i("MainActivity", String.valueOf(received));
             }
         }
     };
