@@ -4,8 +4,11 @@ import android.Manifest;
 import android.content.pm.PackageManager;
 import android.location.Location;
 import android.os.AsyncTask;
+import android.os.HandlerThread;
+import android.os.Looper;
 import android.util.Log;
 
+import androidx.annotation.NonNull;
 import androidx.core.app.ActivityCompat;
 
 import com.android.volley.Request;
@@ -19,10 +22,14 @@ import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.net.URL;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.concurrent.Executor;
 import java.util.concurrent.TimeUnit;
 
+import com.google.android.gms.location.LocationCallback;
+import com.google.android.gms.location.LocationRequest;
+import com.google.android.gms.location.LocationResult;
 import com.google.android.gms.tasks.OnSuccessListener;
 
 public class SelfDriving {
@@ -35,14 +42,14 @@ public class SelfDriving {
     int data_size = 10;
     float[] data = new float[data_size];
 
-    Location last_location;
+    ArrayList<Location> locations = new ArrayList<Location>();
 
     private void boatStop() {
         sendStringToESP32("5");
     }
 
     private void boatForward() {
-        sendStringToESP32("1");
+        sendStringToESP32("1", 20);
     }
 
     private void boatBackward() {
@@ -71,8 +78,6 @@ public class SelfDriving {
 
     private void boatTestMotors() {
         boatForward();
-        boatStop();
-        boatBackward();
     }
 
     private void runHerokuCommand(String command) {
@@ -97,21 +102,33 @@ public class SelfDriving {
         }
     }
 
+    private void sendStringToESP32(String value, int time) {
+        Log.i("alex", "sleeping " + time);
+        Log.i("alex", value);
+        Log.i("alex", Arrays.toString(value.getBytes()));
+        activity.btSendBytes(value.getBytes());
+        try {
+            TimeUnit.SECONDS.sleep(time);
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
+    }
+
     private void sendStringToESP32(String value) {
         Log.i("alex", "sleeping 3");
+        Log.i("alex", value);
+        Log.i("alex", Arrays.toString(value.getBytes()));
+        activity.btSendBytes(value.getBytes());
         try {
             TimeUnit.SECONDS.sleep(3);
         } catch (InterruptedException e) {
             e.printStackTrace();
         }
-        Log.i("alex", value);
-        Log.i("alex", Arrays.toString(value.getBytes()));
-        activity.btSendBytes(value.getBytes());
     }
 
     private void selfdriving_step() {
         // Initialize a new RequestQueue instance
-        Log.i("selfdriving", "new step");
+        Log.i("selfdrivinglogs", "new step");
         RequestQueue requestQueue;
         requestQueue = Volley.newRequestQueue(activity.getApplicationContext());
 
@@ -122,14 +139,14 @@ public class SelfDriving {
                     @Override
                     public void onResponse(JSONObject response) {
                         try {
-                            Log.i("selfdriving", "heorku renponse");
+                            Log.i("selfdrivinglogs", "heorku renponse");
                             if (response.getString("command") == "null") {
                                 last_command = "null";
                             } else {
                                 testing_motors = false;
                                 last_command = response.getJSONArray("command").getString(0);
                             }
-                            Log.i("selfdriving", last_command);
+                            Log.i("selfdrivinglogs", last_command);
                             boatStop();
                             boatLowPower();
                             if (testing_motors) {
@@ -150,7 +167,7 @@ public class SelfDriving {
                             selfdriving_step();
 
                         } catch (JSONException e) {
-                            Log.e("selfdriving", "no command key from heroku! server down or corrupted?");
+                            Log.e("selfdrivinglogs", "no command key from heroku! server down or corrupted?");
                             e.printStackTrace();
                             selfdriving_step();
                         }
@@ -159,7 +176,7 @@ public class SelfDriving {
 
                     @Override
                     public void onErrorResponse(VolleyError error) {
-                        Log.e("selfdriving", String.valueOf(error));
+                        Log.e("selfdrivinglogs", String.valueOf(error));
                         selfdriving_step();
                     }
                 });
@@ -175,9 +192,68 @@ public class SelfDriving {
         sendStringToESP32("5");
     }
 
+
+
+    public void requestSingleUpdate() {
+        // TODO: Comment-out this line.
+        // Looper.prepare();
+
+
+        // only works with SDK Version 23 or higher
+        if (android.os.Build.VERSION.SDK_INT >= 23) {
+            if (activity.getApplicationContext().checkSelfPermission(Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED || activity.getApplicationContext().checkSelfPermission(Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
+                // permission is not granted
+                Log.e("SiSoLocProvider", "Permission not granted.");
+                ActivityCompat.requestPermissions(activity,
+                        new String[]{Manifest.permission.ACCESS_FINE_LOCATION},12
+                        );
+                return;
+            } else {
+                Log.d("SiSoLocProvider", "Permission granted.");
+            }
+        } else {
+            Log.d("SiSoLocProvider", "SDK < 23, checking permissions should not be necessary");
+        }
+
+        // TODO: Start a background thread to receive location result.
+        final HandlerThread handlerThread = new HandlerThread("RequestLocation");
+        handlerThread.start();
+
+        final long startTime = System.currentTimeMillis();
+        LocationCallback fusedTrackerCallback = new LocationCallback() {
+            @Override
+            public void onLocationResult(LocationResult locationResult) {
+                // TODO: Those lines of code will run on the background thread.
+                if ((locationResult.getLastLocation() != null) && (System.currentTimeMillis() <= startTime + 30 * 1000)) {
+                    Log.i("selfdrivinglogs", "LOCATION: " + locationResult.getLastLocation().getLatitude() + "|" + locationResult.getLastLocation().getLongitude());
+                    Log.i("selfdrivinglogs", "ACCURACY: " + locationResult.getLastLocation().getAccuracy());
+                    locations.addAll(locationResult.getLocations());
+                    // mFusedLocationClient.removeLocationUpdates(fusedTrackerCallback);
+                } else {
+                   Log.i("selfdrivinglogs", "LastKnownNull? :: " + (locationResult.getLastLocation() == null));
+                   Log.i("selfdrivinglogs", "Time over? :: " + (System.currentTimeMillis() > startTime + 30 * 1000));
+                }
+                // TODO: After receiving location result, remove the listener.
+                // mFusedLocationClient.removeLocationUpdates(this);
+
+                // Release the background thread which receive the location result.
+                //handlerThread.quit();
+            }
+        };
+
+        LocationRequest req = new LocationRequest();
+        req.setPriority(LocationRequest.PRIORITY_HIGH_ACCURACY);
+        req.setFastestInterval(2000);
+        req.setInterval(2000);
+        // TODO: Pass looper of background thread indicates we want to receive location result in a background thread instead of UI thread.
+        activity.fusedLocationClient.requestLocationUpdates(req, fusedTrackerCallback, handlerThread.getLooper());
+    }
+
+
     public void start(MainActivity mainActivity) {
-        Log.i("selfdriving", "starting..");
+        Log.i("selfdrivinglogs", "starting..");
         activity = mainActivity;
+        requestSingleUpdate();
         selfdriving_step();
     }
 
@@ -192,17 +268,17 @@ public class SelfDriving {
                 InfluxDBWrites.sendMPU6050Angle(data[6], data[7]);
                 InfluxDBWrites.sendMPU6050Temperature(data[8]);
                 InfluxDBWrites.sendBatteryLevel(data[9]);
-                if(last_location != null){
-                    InfluxDBWrites.sendGPS(last_location);
+                if (locations != null && !locations.isEmpty()) {
+                    InfluxDBWrites.sendGPS(locations.get(locations.size() - 1));
                 }
                 return true;
             }
 
             protected void onPostExecute(Boolean result) {
                 if (result) {
-                    Log.i("selfdriving", "data sent to influxdb success");
+                    Log.i("selfdrivinglogs", "data sent to influxdb success");
                 } else {
-                    Log.i("selfdriving", "data sent to influxdb fail");
+                    Log.i("selfdrivinglogs", "data sent to influxdb fail");
                 }
             }
 
@@ -211,38 +287,10 @@ public class SelfDriving {
 
     }
 
-
-
-    private void getGPS(){
-        if (ActivityCompat.checkSelfPermission(activity.getApplicationContext(), Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED && ActivityCompat.checkSelfPermission(activity.getApplicationContext(), Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
-            // TODO: Consider calliVg
-            //    ActivityCompat#requestPermissions
-            // here to request the missing permissions, and then overriding
-            //   public void onRequestPermissionsResult(int requestCode, String[] permissions,
-            //                                          int[] grantResults)
-            // to handle the case where the user grants the permission. See the documentation
-            // for ActivityCompat#requestPermissions for more details.
-            return;
-        }
-        activity.fusedLocationClient.getLastLocation()
-                .addOnSuccessListener(activity, new OnSuccessListener<Location>() {
-                    @Override
-                    public void onSuccess(Location location) {
-                        Log.i("selfdriving", "received GPS location");
-                        last_location = location;
-                        if (location == null) {
-                            Log.e("selfdriving", "no location!");
-                        }
-                    }
-                });
-
-    }
-
     public void receiveBLData(float val) {
         data[data_cursor] = val;
         data_cursor += 1;
         if (data_cursor == data_size) {
-            getGPS();
             sendBLData();
             data_cursor = 0;
         }

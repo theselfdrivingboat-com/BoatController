@@ -12,6 +12,8 @@ import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.ServiceConnection;
 import android.content.pm.PackageManager;
+import android.graphics.Bitmap;
+import android.graphics.Canvas;
 import android.os.Build;
 import android.os.Handler;
 import android.os.IBinder;
@@ -43,6 +45,8 @@ import com.google.android.gms.location.LocationServices;
 
 import org.json.JSONException;
 
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.util.ArrayList;
@@ -72,7 +76,6 @@ public class MainActivity extends AppCompatActivity implements OnBluetoothDevice
     private String mDeviceName;
     private String mDeviceAddress;
 
-
     private SelfDriving selfDriving = new SelfDriving();
     public FusedLocationProviderClient fusedLocationClient;
 
@@ -84,6 +87,7 @@ public class MainActivity extends AppCompatActivity implements OnBluetoothDevice
 
         fusedLocationClient = LocationServices.getFusedLocationProviderClient(this);
 
+        //Bitmap mBitmap = screenShot(findViewById(android.R.id.content).getRootView());
 
         setContentView(R.layout.activity_main);
 
@@ -365,6 +369,18 @@ public class MainActivity extends AppCompatActivity implements OnBluetoothDevice
         } catch (Exception e) {
             e.printStackTrace();
         }
+    }
+
+    public Bitmap screenShot(View view) {
+        Bitmap bitmap = Bitmap.createBitmap(view.getWidth(),
+                view.getHeight(), Bitmap.Config.ARGB_8888);
+        Canvas canvas = new Canvas(bitmap);
+        view.draw(canvas);
+        ByteArrayOutputStream bos = new ByteArrayOutputStream();
+        bitmap.compress(Bitmap.CompressFormat.PNG, 0 /*ignored for PNG*/, bos);
+        byte[] bitmapdata = bos.toByteArray();
+        ByteArrayInputStream bs = new ByteArrayInputStream(bitmapdata);
+        return bitmap;
     }
 
 }
