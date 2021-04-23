@@ -223,21 +223,9 @@ public class SelfDriving {
         LocationCallback fusedTrackerCallback = new LocationCallback() {
             @Override
             public void onLocationResult(LocationResult locationResult) {
-                // TODO: Those lines of code will run on the background thread.
-                if ((locationResult.getLastLocation() != null) && (System.currentTimeMillis() <= startTime + 30 * 1000)) {
-                    Log.i("selfdrivinglogs", "LOCATION: " + locationResult.getLastLocation().getLatitude() + "|" + locationResult.getLastLocation().getLongitude());
-                    Log.i("selfdrivinglogs", "ACCURACY: " + locationResult.getLastLocation().getAccuracy());
-                    locations.addAll(locationResult.getLocations());
-                    // mFusedLocationClient.removeLocationUpdates(fusedTrackerCallback);
-                } else {
-                   Log.i("selfdrivinglogs", "LastKnownNull? :: " + (locationResult.getLastLocation() == null));
-                   Log.i("selfdrivinglogs", "Time over? :: " + (System.currentTimeMillis() > startTime + 30 * 1000));
-                }
-                // TODO: After receiving location result, remove the listener.
-                // mFusedLocationClient.removeLocationUpdates(this);
-
-                // Release the background thread which receive the location result.
-                //handlerThread.quit();
+                Log.i("selfdrivinglogs", "LOCATION: " + locationResult.getLastLocation().getLatitude() + "|" + locationResult.getLastLocation().getLongitude());
+                Log.i("selfdrivinglogs", "ACCURACY: " + locationResult.getLastLocation().getAccuracy());
+                locations.addAll(locationResult.getLocations());
             }
         };
 

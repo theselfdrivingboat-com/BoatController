@@ -95,6 +95,7 @@ public class MainActivity extends AppCompatActivity implements OnBluetoothDevice
         requestPermission();
         initData();
         initService();
+
     }
 
     @Override
