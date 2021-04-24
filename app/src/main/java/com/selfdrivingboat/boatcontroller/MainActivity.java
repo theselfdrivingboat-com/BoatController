@@ -39,6 +39,7 @@ import androidx.recyclerview.widget.GridLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 import androidx.swiperefreshlayout.widget.SwipeRefreshLayout;
 
+import com.datadog.android.log.Logger;
 import com.google.android.gms.location.FusedLocationProviderClient;
 import com.google.android.gms.location.LocationRequest;
 import com.google.android.gms.location.LocationServices;
@@ -95,7 +96,8 @@ public class MainActivity extends AppCompatActivity implements OnBluetoothDevice
         requestPermission();
         initData();
         initService();
-
+        Logger logger = DatadogLogger.getInstance();
+        logger.w("main activity started");
     }
 
     @Override
