@@ -173,6 +173,13 @@ public class SelfDriving {
                             }
                             if (self_driving) {
                                 Log.i("selfdrivinglogs", "starting self driving");
+                                Location before = locations.get(locations.size() - 1);
+                                Log.i("selfdrivinglogs", String.valueOf(before));
+                                boatForward();
+                                boatForward();
+                                Location after = locations.get(locations.size() - 1);
+                                Log.i("selfdrivinglogs", String.valueOf(after));
+                                // TODO: need to move right or left based on self driving logic
                             }
                             runHerokuCommand(last_command);
                             try {

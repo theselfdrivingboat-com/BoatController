@@ -20,6 +20,7 @@ android {
         release {
             minifyEnabled false
             proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
+            buildConfigField "String", "DATADOG_CLIENT_KEY", "pubb238590d7056e5ef565d077f7dec1946"
         }
     }
     compileOptions {

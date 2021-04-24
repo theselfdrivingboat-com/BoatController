@@ -31,7 +31,7 @@ public class MyApplication extends Application{
                 false
         ).useEUEndpoints().build();
         Credentials credentials = new Credentials(
-                "pub039a85c6702567422533f1e2085eac35",
+                "pubb238590d7056e5ef565d077f7dec1946",
                 "prod",
                 "debug",
                 "",
