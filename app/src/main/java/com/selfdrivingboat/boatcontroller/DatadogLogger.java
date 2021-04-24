@@ -1,8 +1,36 @@
 package com.selfdrivingboat.boatcontroller;
 
+import android.content.Context;
+import android.os.Build;
+import android.util.Log;
+
+import com.datadog.android.Datadog;
+import com.datadog.android.core.configuration.Configuration;
+import com.datadog.android.core.configuration.Credentials;
 import com.datadog.android.log.Logger;
+import com.datadog.android.privacy.TrackingConsent;
+
 public class DatadogLogger {
     private static Logger logger = null;
+
+    public static void initialiseLogger(Context context) {
+        Configuration config = new Configuration.Builder(
+                true,
+                true,
+                true,
+                false
+        ).useEUEndpoints().build();
+        Credentials credentials = new Credentials(
+                "pub039a85c6702567422533f1e2085eac35",
+                "prod",
+                BuildConfig.BUILD_TYPE,
+                "",
+                BuildConfig.APPLICATION_ID
+        );
+        Datadog.initialize(context, credentials, config, TrackingConsent.GRANTED);
+        Datadog.setVerbosity(Log.WARN);
+    }
+
 
     private static Logger instantiateLogger() {
         return new Logger.Builder()
