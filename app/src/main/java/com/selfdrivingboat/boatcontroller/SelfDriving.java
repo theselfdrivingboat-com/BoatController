@@ -41,6 +41,9 @@ public class SelfDriving {
     int data_cursor = 0;
     int data_size = 10;
     float[] data = new float[data_size];
+    float GPS_target_latitude;
+    float GPS_target_longitude;
+    boolean self_driving = false;
 
     ArrayList<Location> locations = new ArrayList<Location>();
 
@@ -98,8 +101,23 @@ public class SelfDriving {
                 testing_motors = true;
                 break;
             default:
-                boatStop();
+                if(command.contains("GPS")){
+                    selfDrivingCommand(command);
+                } else {
+                    boatStop();
+                }
         }
+    }
+
+    private void selfDrivingCommand(String GPS_string){
+        //GPS--0.2421656731966487-51.572429083966554
+        Log.i("selfdrivinglogs", "received selfDrivingCommand");
+        String[] parts = GPS_string.split("-");
+        GPS_target_longitude = Float.parseFloat(parts[4]);
+        GPS_target_latitude = Float.parseFloat(parts[3]);
+        Log.i("selfdrivinglogs", String.valueOf(GPS_target_longitude));
+        Log.i("selfdrivinglogs", String.valueOf(GPS_target_latitude));
+        self_driving = true;
     }
 
     private void sendStringToESP32(String value, int time) {
@@ -144,6 +162,7 @@ public class SelfDriving {
                                 last_command = "null";
                             } else {
                                 testing_motors = false;
+                                self_driving = false;
                                 last_command = response.getJSONArray("command").getString(0);
                             }
                             Log.i("selfdrivinglogs", last_command);
@@ -151,6 +170,9 @@ public class SelfDriving {
                             boatLowPower();
                             if (testing_motors) {
                                 boatTestMotors();
+                            }
+                            if (self_driving) {
+                                Log.i("selfdrivinglogs", "starting self driving");
                             }
                             runHerokuCommand(last_command);
                             try {
