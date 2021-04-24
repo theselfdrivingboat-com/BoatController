@@ -111,19 +111,19 @@ public class SelfDriving {
 
     private void selfDrivingCommand(String GPS_string){
         //GPS--0.2421656731966487-51.572429083966554
-        Log.i("selfdrivinglogs", "received selfDrivingCommand");
+        activity.logger.i( "received selfDrivingCommand");
         String[] parts = GPS_string.split("-");
         GPS_target_longitude = Float.parseFloat(parts[4]);
         GPS_target_latitude = Float.parseFloat(parts[3]);
-        Log.i("selfdrivinglogs", String.valueOf(GPS_target_longitude));
-        Log.i("selfdrivinglogs", String.valueOf(GPS_target_latitude));
+        activity.logger.i( String.valueOf(GPS_target_longitude));
+        activity.logger.i( String.valueOf(GPS_target_latitude));
         self_driving = true;
     }
 
     private void sendStringToESP32(String value, int time) {
-        Log.i("alex", "sleeping " + time);
-        Log.i("alex", value);
-        Log.i("alex", Arrays.toString(value.getBytes()));
+        activity.logger.i( "sleeping " + time);
+        activity.logger.i( value);
+        activity.logger.i( Arrays.toString(value.getBytes()));
         activity.btSendBytes(value.getBytes());
         try {
             TimeUnit.SECONDS.sleep(time);
@@ -133,9 +133,9 @@ public class SelfDriving {
     }
 
     private void sendStringToESP32(String value) {
-        Log.i("alex", "sleeping 3");
-        Log.i("alex", value);
-        Log.i("alex", Arrays.toString(value.getBytes()));
+        activity.logger.i( "sleeping 3");
+        activity.logger.i( value);
+        activity.logger.i( Arrays.toString(value.getBytes()));
         activity.btSendBytes(value.getBytes());
         try {
             TimeUnit.SECONDS.sleep(3);
@@ -146,7 +146,7 @@ public class SelfDriving {
 
     private void selfdriving_step() {
         // Initialize a new RequestQueue instance
-        Log.i("selfdrivinglogs", "new step");
+        activity.logger.i( "new step");
         RequestQueue requestQueue;
         requestQueue = Volley.newRequestQueue(activity.getApplicationContext());
 
@@ -157,7 +157,7 @@ public class SelfDriving {
                     @Override
                     public void onResponse(JSONObject response) {
                         try {
-                            Log.i("selfdrivinglogs", "heorku renponse");
+                            activity.logger.i( "heorku renponse");
                             if (response.getString("command") == "null") {
                                 last_command = "null";
                             } else {
@@ -165,20 +165,20 @@ public class SelfDriving {
                                 self_driving = false;
                                 last_command = response.getJSONArray("command").getString(0);
                             }
-                            Log.i("selfdrivinglogs", last_command);
+                            activity.logger.i( last_command);
                             boatStop();
                             boatLowPower();
                             if (testing_motors) {
                                 boatTestMotors();
                             }
                             if (self_driving) {
-                                Log.i("selfdrivinglogs", "starting self driving");
+                                activity.logger.i( "starting self driving");
                                 Location before = locations.get(locations.size() - 1);
-                                Log.i("selfdrivinglogs", String.valueOf(before));
+                                activity.logger.i( String.valueOf(before));
                                 boatForward();
                                 boatForward();
                                 Location after = locations.get(locations.size() - 1);
-                                Log.i("selfdrivinglogs", String.valueOf(after));
+                                activity.logger.i( String.valueOf(after));
                                 // TODO: need to move right or left based on self driving logic
                             }
                             runHerokuCommand(last_command);
@@ -252,8 +252,8 @@ public class SelfDriving {
         LocationCallback fusedTrackerCallback = new LocationCallback() {
             @Override
             public void onLocationResult(LocationResult locationResult) {
-                Log.i("selfdrivinglogs", "LOCATION: " + locationResult.getLastLocation().getLatitude() + "|" + locationResult.getLastLocation().getLongitude());
-                Log.i("selfdrivinglogs", "ACCURACY: " + locationResult.getLastLocation().getAccuracy());
+                activity.logger.i( "LOCATION: " + locationResult.getLastLocation().getLatitude() + "|" + locationResult.getLastLocation().getLongitude());
+                activity.logger.i( "ACCURACY: " + locationResult.getLastLocation().getAccuracy());
                 locations.addAll(locationResult.getLocations());
             }
         };
@@ -268,7 +268,7 @@ public class SelfDriving {
 
 
     public void start(MainActivity mainActivity) {
-        Log.i("selfdrivinglogs", "starting..");
+        activity.logger.i( "starting..");
         activity = mainActivity;
         requestSingleUpdate();
         selfdriving_step();
@@ -293,9 +293,9 @@ public class SelfDriving {
 
             protected void onPostExecute(Boolean result) {
                 if (result) {
-                    Log.i("selfdrivinglogs", "data sent to influxdb success");
+                    activity.logger.i( "data sent to influxdb success");
                 } else {
-                    Log.i("selfdrivinglogs", "data sent to influxdb fail");
+                    activity.logger.i( "data sent to influxdb fail");
                 }
             }
 
