@@ -76,7 +76,7 @@ public class MainActivity extends AppCompatActivity implements OnBluetoothDevice
     private BluetoothLeService mBluetoothLeService;
     private String mDeviceName;
     private String mDeviceAddress;
-
+    private Logger logger = DatadogLogger.getInstance();
     private SelfDriving selfDriving = new SelfDriving();
     public FusedLocationProviderClient fusedLocationClient;
 
@@ -96,7 +96,6 @@ public class MainActivity extends AppCompatActivity implements OnBluetoothDevice
         requestPermission();
         initData();
         initService();
-        Logger logger = DatadogLogger.getInstance();
         logger.w("main activity started");
     }
 
