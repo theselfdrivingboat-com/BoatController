@@ -46,6 +46,7 @@ public class SelfDriving {
     boolean self_driving = false;
 
     ArrayList<Location> locations = new ArrayList<Location>();
+    ArrayList<Location> selfdriving_locations = new ArrayList<Location>();
 
     private void boatStop() {
         sendStringToESP32("5");
@@ -60,11 +61,11 @@ public class SelfDriving {
     }
 
     private void boatLeft() {
-        sendStringToESP32("3");
+        sendStringToESP32("3", 5);
     }
 
     private void boatRight() {
-        sendStringToESP32("4");
+        sendStringToESP32("4", 5);
     }
 
     private void boatLowPower() {
@@ -112,9 +113,9 @@ public class SelfDriving {
     private void selfDrivingCommand(String GPS_string){
         //GPS--0.2421656731966487-51.572429083966554
         activity.logger.i( "received selfDrivingCommand");
-        String[] parts = GPS_string.split("-");
-        GPS_target_longitude = Float.parseFloat(parts[4]);
-        GPS_target_latitude = Float.parseFloat(parts[3]);
+        String[] parts = GPS_string.split(",");
+        GPS_target_longitude = Float.parseFloat(parts[2]);
+        GPS_target_latitude = Float.parseFloat(parts[1]);
         activity.logger.i( String.valueOf(GPS_target_longitude));
         activity.logger.i( String.valueOf(GPS_target_latitude));
         self_driving = true;
@@ -172,14 +173,34 @@ public class SelfDriving {
                                 boatTestMotors();
                             }
                             if (self_driving) {
-                                activity.logger.i( "starting self driving");
+                                activity.logger.i( "self driving logic..");
                                 Location before = locations.get(locations.size() - 1);
+                                selfdriving_locations.add(before);
+                                activity.logger.i( "BEFORE LOCATION");
                                 activity.logger.i( String.valueOf(before));
                                 boatForward();
                                 boatForward();
                                 Location after = locations.get(locations.size() - 1);
+                                selfdriving_locations.add(after);
+                                activity.logger.i( "AFTER LOCATION");
                                 activity.logger.i( String.valueOf(after));
-                                // TODO: need to move right or left based on self driving logic
+                                boolean goRight = selfDrivingPolicy_Right(
+                                        before.getLongitude(),
+                                        before.getLatitude(),
+                                        after.getLongitude(),
+                                        after.getLatitude(),
+                                        GPS_target_longitude,
+                                        GPS_target_latitude
+                                );
+                                // TODO: currently goRight is opposite of true, but also
+                                // motors are wired opposite so NOT + NOT is YES
+                                activity.logger.i( "GO RIGHT?");
+                                activity.logger.i(String.valueOf(goRight));
+                                if (goRight) {
+                                    boatRight();
+                                } else {
+                                    boatLeft();
+                                }
                             }
                             runHerokuCommand(last_command);
                             try {
@@ -213,6 +234,19 @@ public class SelfDriving {
         // Access the RequestQueue through your singleton class.
         requestQueue.add(jsonObjectRequest);
 
+    }
+
+    private boolean selfDrivingPolicy_Right(
+            double before_lon, // A
+            double before_lat, // A
+            double after_lon, // B
+            double after_lat, // B
+            float target_lon, // T
+            float target_lat){
+        // longitude X
+        // latitude Y
+        return (after_lat - before_lat) * (target_lon - after_lon)
+                > (after_lon - before_lon) * (target_lat - after_lat);
     }
 
     private void testDrive() {
@@ -260,15 +294,14 @@ public class SelfDriving {
 
         LocationRequest req = new LocationRequest();
         req.setPriority(LocationRequest.PRIORITY_HIGH_ACCURACY);
-        req.setFastestInterval(2000);
-        req.setInterval(2000);
+        req.setFastestInterval(10000);
+        req.setInterval(10000);
         // TODO: Pass looper of background thread indicates we want to receive location result in a background thread instead of UI thread.
         activity.fusedLocationClient.requestLocationUpdates(req, fusedTrackerCallback, handlerThread.getLooper());
     }
 
 
     public void start(MainActivity mainActivity) {
-        activity.logger.i( "starting..");
         activity = mainActivity;
         requestSingleUpdate();
         selfdriving_step();
@@ -285,8 +318,8 @@ public class SelfDriving {
                 InfluxDBWrites.sendMPU6050Angle(data[6], data[7]);
                 InfluxDBWrites.sendMPU6050Temperature(data[8]);
                 InfluxDBWrites.sendBatteryLevel(data[9]);
-                if (locations != null && !locations.isEmpty()) {
-                    InfluxDBWrites.sendGPS(locations.get(locations.size() - 1));
+                if (selfdriving_locations != null && !selfdriving_locations.isEmpty()) {
+                    InfluxDBWrites.sendGPS(selfdriving_locations.get(selfdriving_locations.size() - 1));
                 }
                 return true;
             }
