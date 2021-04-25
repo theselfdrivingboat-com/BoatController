@@ -39,6 +39,7 @@ import androidx.recyclerview.widget.GridLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 import androidx.swiperefreshlayout.widget.SwipeRefreshLayout;
 
+import com.android.volley.RequestQueue;
 import com.datadog.android.log.Logger;
 import com.google.android.gms.location.FusedLocationProviderClient;
 import com.google.android.gms.location.LocationRequest;
@@ -80,6 +81,8 @@ public class MainActivity extends AppCompatActivity implements OnBluetoothDevice
     private SelfDriving selfDriving = new SelfDriving();
     public FusedLocationProviderClient fusedLocationClient;
 
+    public RequestQueue volleyQueue;
+
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -91,6 +94,9 @@ public class MainActivity extends AppCompatActivity implements OnBluetoothDevice
         //Bitmap mBitmap = screenShot(findViewById(android.R.id.content).getRootView());
 
         setContentView(R.layout.activity_main);
+
+        volleyQueue = VolleySingleton.getInstance(this.getApplicationContext()).
+                getRequestQueue();
 
         initView();
         requestPermission();

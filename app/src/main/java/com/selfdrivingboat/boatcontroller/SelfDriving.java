@@ -148,8 +148,6 @@ public class SelfDriving {
     private void selfdriving_step() {
         // Initialize a new RequestQueue instance
         activity.logger.i( "new step");
-        RequestQueue requestQueue;
-        requestQueue = Volley.newRequestQueue(activity.getApplicationContext());
 
         String url = "https://theselfdrivingboat.herokuapp.com/read_last_command?boat_name=5kgboat-001";
         JsonObjectRequest jsonObjectRequest = new JsonObjectRequest
@@ -232,7 +230,7 @@ public class SelfDriving {
                 });
 
         // Access the RequestQueue through your singleton class.
-        requestQueue.add(jsonObjectRequest);
+        activity.volleyQueue.add(jsonObjectRequest);
 
     }
 
