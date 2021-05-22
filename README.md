@@ -10,10 +10,8 @@ If you never used GitHub read the following
 
 2. This is a Java app that run on the phone that is on the self driving boat.
 
-If you will be coding from the computer install Android Studio
-- [ ] https://www.googleadservices.com/pagead/aclk?sa=L&ai=DChcSEwioleq3uN7wAhWJqbIKHX8FBAYYABAAGgJscg&ohost=www.google.com&cid=CAESQOD2PdCLUDWFpI8gIXViLK-i1gUqp85wGCau_Jmzn2eDdu-vs6taPTTOYyavs7z6aAd4ZTE1uuNLfJ44q0ohOuU&sig=AOD64_2P9pyEBnblfDssj3IngeS91iaO3w&q&adurl&ved=2ahUKEwimvuG3uN7wAhVU7OAKHfJwC1gQ0Qx6BAgCEAE
-If you will be coding from the phone install 
-- [ ] https://www.android-ide.com
+- If you will be coding from the computer install Android Studio [ ] https://www.googleadservices.com/pagead/aclk?sa=L&ai=DChcSEwioleq3uN7wAhWJqbIKHX8FBAYYABAAGgJscg&ohost=www.google.com&cid=CAESQOD2PdCLUDWFpI8gIXViLK-i1gUqp85wGCau_Jmzn2eDdu-vs6taPTTOYyavs7z6aAd4ZTE1uuNLfJ44q0ohOuU&sig=AOD64_2P9pyEBnblfDssj3IngeS91iaO3w&q&adurl&ved=2ahUKEwimvuG3uN7wAhVU7OAKHfJwC1gQ0Qx6BAgCEAE
+- If you will be coding from the phone install  [ ] https://www.android-ide.com
 
 3. How this app work in short:
 - connect via bluetooth to ESP32 https://en.wikipedia.org/wiki/ESP32 (that we also have on the boat)
