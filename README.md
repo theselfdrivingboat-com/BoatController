@@ -14,7 +14,7 @@ If you never used GitHub read the following
 - If you will be coding from the phone install  [ ] https://www.android-ide.com
 
 3. How this app work in short:
-- connect via bluetooth to ESP32 https://en.wikipedia.org/wiki/ESP32 (that we also have on the boat)
+- connect via bluetooth to ESP32 https://en.wikipedia.org/wiki/ESP32 (that we also have on the boat), ESP32 is a microcontroller (https://www.youtube.com/watch?v=ZY-HrRGCQ4w)
 - receive some commands from our webserver https://theselfdrivingboat.herokuapp.com
 - send the command to ESP32 (that will drive the motor)
 - get data from sensor from the boat and send them back on the webserver
