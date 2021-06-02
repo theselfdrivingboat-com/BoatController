@@ -316,8 +316,8 @@ public class SelfDriving {
                 InfluxDBWrites.sendMPU6050Angle(data[6], data[7]);
                 InfluxDBWrites.sendMPU6050Temperature(data[8]);
                 InfluxDBWrites.sendBatteryLevel(data[9]);
-                if (selfdriving_locations != null && !selfdriving_locations.isEmpty()) {
-                    InfluxDBWrites.sendGPS(selfdriving_locations.get(selfdriving_locations.size() - 1));
+                if (locations != null && !locations.isEmpty()) {
+                    InfluxDBWrites.sendGPS(locations.get(locations.size() - 1));
                 }
                 return true;
             }
