@@ -6,12 +6,16 @@ full list of tasks https://github.com/orgs/theselfdrivingboat-com/projects/3, we
 
 [ ] [UI Improvements](https://github.com/theselfdrivingboat-com/BoatController/issues/2)  lvl. 1
 This is the easiest one, for you to get used to the app and the environment
+
 [ ] [App Crashing](https://github.com/theselfdrivingboat-com/BoatController/issues/7) lvl. 4
 Wait for the ESP32 this is the hardest one, will take a long time
+
 [ ] [Inclinometer](https://github.com/theselfdrivingboat-com/BoatController/issues/4) lvl. 3
 This is mid difficulty, just copy paste code
+
 [ ] [Video and Pics](https://github.com/theselfdrivingboat-com/BoatController/issues/5) lvl. 4
 This is harder need to write code
+
 [ ] [Additional Sensors](https://github.com/theselfdrivingboat-com/BoatController/issues/6) lvl. 3
 This is up to you
 
