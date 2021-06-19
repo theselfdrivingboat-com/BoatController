@@ -33,6 +33,11 @@ public class InfluxDBWrites {
         return String.format("%s,%s=%s %s=%s %s\n",measurement,tagk,tagv,pointk,pointv,String.valueOf(unixTime));
     }
 
+    public static void sendSignalStrength(int dbm){
+        HTTPwrite("internetSignal",
+                "device" , "BV5500", "dbm", String.valueOf(dbm));
+    }
+
     public static void sendBluetoothStatus(MainActivity activity) {
         HTTPwrite("bluetooth",
                 "device", "BV5500",

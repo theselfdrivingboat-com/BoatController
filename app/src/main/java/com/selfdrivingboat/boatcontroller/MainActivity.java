@@ -18,6 +18,9 @@ import android.os.Build;
 import android.os.Handler;
 import android.os.IBinder;
 import android.os.Bundle;
+import android.telephony.CellInfoGsm;
+import android.telephony.CellSignalStrengthGsm;
+import android.telephony.TelephonyManager;
 import android.text.InputType;
 import android.text.TextUtils;
 import android.util.Log;
@@ -80,6 +83,7 @@ public class MainActivity extends AppCompatActivity implements OnBluetoothDevice
     public Logger logger = DatadogLogger.getInstance();
     private SelfDriving selfDriving = new SelfDriving();
     public FusedLocationProviderClient fusedLocationClient;
+    public TelephonyManager mTelephonyManager;
 
     public RequestQueue volleyQueue;
 
@@ -97,6 +101,9 @@ public class MainActivity extends AppCompatActivity implements OnBluetoothDevice
 
         volleyQueue = VolleySingleton.getInstance(this.getApplicationContext()).
                 getRequestQueue();
+
+        mTelephonyManager = (TelephonyManager) this.getSystemService(Context.TELEPHONY_SERVICE);
+// for example value of first element
 
         initView();
         requestPermission();

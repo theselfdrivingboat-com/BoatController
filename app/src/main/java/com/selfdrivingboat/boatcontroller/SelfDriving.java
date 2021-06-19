@@ -6,6 +6,10 @@ import android.location.Location;
 import android.os.AsyncTask;
 import android.os.HandlerThread;
 import android.os.Looper;
+import android.telephony.CellInfoGsm;
+import android.telephony.CellInfoWcdma;
+import android.telephony.CellSignalStrengthGsm;
+import android.telephony.CellSignalStrengthWcdma;
 import android.util.Log;
 
 import androidx.annotation.NonNull;
@@ -319,6 +323,18 @@ public class SelfDriving {
         selfdriving_step();
     }
 
+    private int getSignalStrength(){
+        if (ActivityCompat.checkSelfPermission(activity, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
+            activity.logger.e("PERMISSION ERROR FOR 4G SIGNAL STRENGTH");
+            return -1;
+        }
+        CellInfoWcdma cellInfoGsm = (CellInfoWcdma) activity.mTelephonyManager.getAllCellInfo().get(0);
+        CellSignalStrengthWcdma cellSignalStrengthGsm = cellInfoGsm.getCellSignalStrength();
+        int dbm = cellSignalStrengthGsm.getDbm();
+        activity.logger.i("signal strength "+ dbm);
+        return dbm;
+    }
+
     public void sendBLData() {
 
         class sendDataTask extends AsyncTask<Void, Void, Boolean> {
@@ -330,6 +346,7 @@ public class SelfDriving {
                 InfluxDBWrites.sendMPU6050Angle(data[6], data[7]);
                 InfluxDBWrites.sendMPU6050Temperature(data[8]);
                 InfluxDBWrites.sendBatteryLevel(data[9]);
+                InfluxDBWrites.sendSignalStrength(getSignalStrength());
                 if (locations != null && !locations.isEmpty()) {
                     InfluxDBWrites.sendGPS(locations.get(locations.size() - 1));
                 }
