@@ -30,6 +30,19 @@ import android.widget.ListAdapter;
 import android.widget.ListView;
 import android.widget.Toast;
 import android.widget.ToggleButton;
+import android.app.Activity;
+import android.content.Intent;
+import android.hardware.Sensor;
+import android.hardware.SensorEvent;
+import android.hardware.SensorEventListener;
+import android.hardware.SensorManager;
+import android.os.Bundle;
+import android.view.Menu;
+import android.view.MenuInflater;
+import android.view.MenuItem;
+import android.view.View;
+import android.widget.ProgressBar;
+import android.widget.TextView;
 
 
 import androidx.appcompat.app.AlertDialog;
@@ -54,6 +67,10 @@ import java.nio.ByteOrder;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
+
+import static android.hardware.SensorManager.DATA_X;
+import static android.hardware.SensorManager.DATA_Y;
+import static android.hardware.SensorManager.DATA_Z;
 
 
 public class MainActivity extends AppCompatActivity implements OnBluetoothDeviceClickedListener {
@@ -82,11 +99,21 @@ public class MainActivity extends AppCompatActivity implements OnBluetoothDevice
     public FusedLocationProviderClient fusedLocationClient;
 
     public RequestQueue volleyQueue;
+    private SensorManager sensorManager;
+    private Sensor acceleRometer;
+    public float x, y, z;
 
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        sensorManager = (SensorManager) getSystemService(SENSOR_SERVICE);
+        acceleRometer = sensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER);
+        //int rate = SensorManager.SENSOR_DELAY_NORMAL; // ~ 200-400 msec
+        int rate; // ~ 10 msec
+        rate = SensorManager.SENSOR_DELAY_FASTEST;
+
+
         InfluxDBWrites.sendBluetoothStatus(MainActivity.this);
 
         fusedLocationClient = LocationServices.getFusedLocationProviderClient(this);
@@ -104,10 +131,32 @@ public class MainActivity extends AppCompatActivity implements OnBluetoothDevice
         initService();
         logger.w("main activity started");
     }
+    public void onSensorChanged(SensorEvent event) {
+        // alpha is calculated as t / (t + dT)
+        // with t, the low-pass filter's time-constant
+        // and dT, the event delivery rate
+        x =  event.values[0];
+        y =  event.values[1];
+        z =  event.values[2];
+
+    }
+  /*  @Override
+        if (sensorEvent.sensor.getType() == Sensor.TYPE_ACCELEROMETER) {
+            x = sensorEvent.values;
+            y = sensorEvent.values;
+            z = sensorEvent.values;
+            InfluxDBWrites.sendMPU6050Accelerometer(x,y,z);
+        }
+    @Override
+    public void onSensorChanged(SensorEvent event){
+        InfluxDBWrites.sendMPU6050Accelerometer(x,y,z);
+    }
+*/
 
     @Override
     protected void onResume() {
         super.onResume();
+        sensorManager.registerListener((SensorEventListener) this, acceleRometer, SensorManager.SENSOR_DELAY_NORMAL);
         initReceiver();
         scanLeDevice(true);
     }
