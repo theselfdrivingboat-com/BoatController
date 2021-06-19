@@ -15,6 +15,7 @@ import android.content.ServiceConnection;
 import android.content.pm.PackageManager;
 import android.graphics.Bitmap;
 import android.graphics.Canvas;
+import android.os.AsyncTask;
 import android.os.Build;
 import android.os.Handler;
 import android.os.IBinder;
@@ -102,7 +103,8 @@ public class MainActivity extends AppCompatActivity implements OnBluetoothDevice
     public RequestQueue volleyQueue;
     private SensorManager sensorManager;
     private Sensor mACCELEROMETER;
-    public float  acceleRometer_x,  acceleRometer_y,  acceleRometer_z;
+    public float  acceleRometer_x = 0,  acceleRometer_y = 0,  acceleRometer_z = 0;
+    public int accellerometer_count = 0;
 
 
     @Override
@@ -110,7 +112,7 @@ public class MainActivity extends AppCompatActivity implements OnBluetoothDevice
         super.onCreate(savedInstanceState);
         sensorManager = (SensorManager) getSystemService(SENSOR_SERVICE);
         mACCELEROMETER = sensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER);
-        sensorManager.registerListener(this,mACCELEROMETER, SensorManager.SENSOR_DELAY_NORMAL);
+        sensorManager.registerListener(this,mACCELEROMETER, SensorManager.SENSOR_DELAY_UI);
 
 
 
@@ -145,10 +147,36 @@ public class MainActivity extends AppCompatActivity implements OnBluetoothDevice
         // with t, the low-pass filter's time-constant
         // and dT, the event delivery rate;*/
 
-        acceleRometer_x = event.values[0];
-        acceleRometer_y = event.values[1];
-        acceleRometer_z = event.values[2];
-        InfluxDBWrites.sendMPU6050Accelerometer( acceleRometer_x, acceleRometer_y, acceleRometer_z);
+        accellerometer_count += 1;
+        acceleRometer_x = Math.max(event.values[0], acceleRometer_x);
+        acceleRometer_y = Math.max(event.values[1], acceleRometer_y);
+        acceleRometer_z = Math.max(event.values[2], acceleRometer_z);
+        this.logger.i("[androidAccelerometer] onSensorChanged");
+
+        if (accellerometer_count == 20){
+            this.logger.i("[androidAccelerometer] count triggered");
+            class sendDataTask extends AsyncTask<Void, Void, Boolean> {
+                @Override
+                protected Boolean doInBackground(Void... voids) {
+                    InfluxDBWrites.sendAndroidAccelerometer( acceleRometer_x );
+                    return true;
+                }
+
+                protected void onPostExecute(Boolean result) {
+                    if (result) {
+                        MainActivity.this.logger.i( "[androidAccelerometer] data sent to influxdb success");
+                    } else {
+                        MainActivity.this.logger.i( "[androidAccelerometer] data sent to influxdb fail");
+                    }
+                }
+
+            }
+            new sendDataTask().execute();
+            accellerometer_count = 0;
+            acceleRometer_x = -100000;
+            acceleRometer_y = -100000;
+            acceleRometer_z = -100000;
+        }
     }
 
 

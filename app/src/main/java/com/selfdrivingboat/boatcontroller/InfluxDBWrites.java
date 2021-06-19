@@ -51,6 +51,12 @@ public class InfluxDBWrites {
                 "z", String.valueOf(z));
     }
 
+    public static void sendAndroidAccelerometer( float x ){
+        HTTPwrite("accelerometer",
+                "device", "AndroidBV5500",
+                "x", String.valueOf(x));
+    }
+
     public static void sendMPU6050Gyroscope(float x, float y, float z){
         HTTPwrite("gyroscope",
                 "device", "MPU6050",
