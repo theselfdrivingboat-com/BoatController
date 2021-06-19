@@ -148,6 +148,11 @@ public class SelfDriving {
     private void selfdriving_step() {
         // Initialize a new RequestQueue instance
         activity.logger.i( "new step");
+        try {
+            TimeUnit.SECONDS.sleep(1);
+        } catch (InterruptedException e) {
+            activity.logger.e(String.valueOf(e));
+        }
 
         String url = "https://theselfdrivingboat.herokuapp.com/read_last_command?boat_name=5kgboat-001";
         JsonObjectRequest jsonObjectRequest = new JsonObjectRequest
@@ -204,19 +209,23 @@ public class SelfDriving {
                             try {
                                 TimeUnit.SECONDS.sleep(1);
                             } catch (InterruptedException e) {
-                                e.printStackTrace();
+                                activity.logger.e(String.valueOf(e));
                             }
                             boatStop();
                             try {
                                 TimeUnit.SECONDS.sleep(clock);
                             } catch (InterruptedException e) {
-                                e.printStackTrace();
+                                activity.logger.e(String.valueOf(e));
                             }
                             selfdriving_step();
 
                         } catch (JSONException e) {
-                            Log.e("selfdrivinglogs", "no command key from heroku! server down or corrupted?");
-                            e.printStackTrace();
+                            activity.logger.e("Error from HEROKU!!", e);
+                            try {
+                                TimeUnit.SECONDS.sleep(1);
+                            } catch (InterruptedException e2) {
+                                activity.logger.e(String.valueOf(e2));
+                            }
                             selfdriving_step();
                         }
                     }
@@ -224,7 +233,12 @@ public class SelfDriving {
 
                     @Override
                     public void onErrorResponse(VolleyError error) {
-                        Log.e("selfdrivinglogs", String.valueOf(error));
+                        activity.logger.e(String.valueOf(error));
+                        try {
+                            TimeUnit.SECONDS.sleep(1);
+                        } catch (InterruptedException e) {
+                            activity.logger.e(String.valueOf(e));
+                        }
                         selfdriving_step();
                     }
                 });
