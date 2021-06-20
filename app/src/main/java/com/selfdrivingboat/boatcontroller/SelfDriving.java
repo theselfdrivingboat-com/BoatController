@@ -157,6 +157,7 @@ public class SelfDriving {
         } catch (InterruptedException e) {
             activity.logger.e(String.valueOf(e));
         }
+        sendAndroidData();
 
         String url = "https://theselfdrivingboat.herokuapp.com/read_last_command?boat_name=5kgboat-001";
         JsonObjectRequest jsonObjectRequest = new JsonObjectRequest
@@ -335,18 +336,12 @@ public class SelfDriving {
         return dbm;
     }
 
-    public void sendBLData() {
-
+    public void sendAndroidData(){
         class sendDataTask extends AsyncTask<Void, Void, Boolean> {
             @Override
             protected Boolean doInBackground(Void... voids) {
-                activity.logger.i( "sending influxdb data.. doInBackground");
+                activity.logger.i( "sending influxdb anroid data.. doInBackground");
                 InfluxDBWrites.sendBluetoothStatus(activity);
-                InfluxDBWrites.sendMPU6050Accelerometer(data[0], data[1], data[2]);
-                InfluxDBWrites.sendMPU6050Gyroscope(data[3], data[4], data[5]);
-                InfluxDBWrites.sendMPU6050Angle(data[6], data[7]);
-                InfluxDBWrites.sendMPU6050Temperature(data[8]);
-                InfluxDBWrites.sendBatteryLevel(data[9]);
                 InfluxDBWrites.sendSignalStrength(getSignalStrength());
                 if (locations != null && !locations.isEmpty()) {
                     InfluxDBWrites.sendGPS(locations.get(locations.size() - 1));
@@ -356,9 +351,36 @@ public class SelfDriving {
 
             protected void onPostExecute(Boolean result) {
                 if (result) {
-                    activity.logger.i( "data sent to influxdb success");
+                    activity.logger.i( "android data sent to influxdb success");
                 } else {
-                    activity.logger.i( "data sent to influxdb fail");
+                    activity.logger.i( "android data sent to influxdb fail");
+                }
+            }
+
+        }
+        new sendDataTask().execute();
+
+    }
+
+    public void sendBLData() {
+
+        class sendDataTask extends AsyncTask<Void, Void, Boolean> {
+            @Override
+            protected Boolean doInBackground(Void... voids) {
+                activity.logger.i( "sending influxdb bluetooth data.. doInBackground");
+                InfluxDBWrites.sendMPU6050Accelerometer(data[0], data[1], data[2]);
+                InfluxDBWrites.sendMPU6050Gyroscope(data[3], data[4], data[5]);
+                InfluxDBWrites.sendMPU6050Angle(data[6], data[7]);
+                InfluxDBWrites.sendMPU6050Temperature(data[8]);
+                InfluxDBWrites.sendBatteryLevel(data[9]);
+                return true;
+            }
+
+            protected void onPostExecute(Boolean result) {
+                if (result) {
+                    activity.logger.i( "bluetooth data sent to influxdb success");
+                } else {
+                    activity.logger.i( "bluetooth data sent to influxdb fail");
                 }
             }
 
