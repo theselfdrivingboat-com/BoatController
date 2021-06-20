@@ -340,6 +340,7 @@ public class SelfDriving {
         class sendDataTask extends AsyncTask<Void, Void, Boolean> {
             @Override
             protected Boolean doInBackground(Void... voids) {
+                activity.logger.i( "sending influxdb data.. doInBackground");
                 InfluxDBWrites.sendBluetoothStatus(activity);
                 InfluxDBWrites.sendMPU6050Accelerometer(data[0], data[1], data[2]);
                 InfluxDBWrites.sendMPU6050Gyroscope(data[3], data[4], data[5]);

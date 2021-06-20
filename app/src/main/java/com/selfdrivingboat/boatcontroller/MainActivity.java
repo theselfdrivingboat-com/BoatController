@@ -122,7 +122,7 @@ public class MainActivity extends AppCompatActivity implements OnBluetoothDevice
     @Override
     public void onPause() {
         super.onPause();
-        Log.i("MainActivity", "unregisterReceiver()");
+        logger.i( "unregisterReceiver()");
         unregisterReceiver(mGattUpdateReceiver);
     }
 
@@ -159,7 +159,7 @@ public class MainActivity extends AppCompatActivity implements OnBluetoothDevice
     }
 
     private void initService() {
-        Log.i("MainActivity", "initService()");
+        logger.i( "initService()");
 
         if (mBluetoothLeService == null) {
             Intent gattServiceIntent = new Intent(this, BluetoothLeService.class);
@@ -223,7 +223,7 @@ public class MainActivity extends AppCompatActivity implements OnBluetoothDevice
     @Override
     public void onBluetoothDeviceClicked(String name, String address) {
 
-        Log.i("MainActivity", "Attempt to connect device : " + name + "(" + address + ")");
+        logger.i( "Attempt to connect device : " + name + "(" + address + ")");
         mDeviceName = name;
         mDeviceAddress = address;
 
@@ -239,7 +239,7 @@ public class MainActivity extends AppCompatActivity implements OnBluetoothDevice
     }
 
     private void initReceiver() {
-        Log.i("MainActivity", "initReceiver()");
+        logger.i( "initReceiver()");
         final IntentFilter intentFilter = new IntentFilter();
         intentFilter.addAction(BluetoothLeService.ACTION_GATT_CONNECTED);
         intentFilter.addAction(BluetoothLeService.ACTION_GATT_DISCONNECTED);
@@ -254,20 +254,20 @@ public class MainActivity extends AppCompatActivity implements OnBluetoothDevice
         public void onReceive(Context context, Intent intent) {
             String action = intent.getAction();
             if (BluetoothLeService.ACTION_GATT_CONNECTED.equals(action)) {
-                Log.i("MainActivity", "ACTION_GATT_CONNECTED!!!");
+                logger.i( "ACTION_GATT_CONNECTED!!!");
                 showMsg("Connected device ..");
 
                 mConnectionState = BluetoothLeService.ACTION_GATT_CONNECTED;
                 swipeRefresh.setRefreshing(false);
 
             } else if (BluetoothLeService.ACTION_GATT_DISCONNECTED.equals(action)) {
-                Log.i("MainActivity", "ACTION_GATT_DISCONNECTED!!!");
+                logger.i( "ACTION_GATT_DISCONNECTED!!!");
                 showMsg("disconnected");
                 mConnectionState = BluetoothLeService.ACTION_GATT_DISCONNECTED;
                 swipeRefresh.setRefreshing(false);
             } else if (BluetoothLeService.ACTION_GATT_SERVICES_DISCOVERED.equals(action)) {
 
-                Log.i("alex", "service discovered");
+                logger.i( "service discovered");
                 mBluetoothLeService.getSupportedGattServices();
                 // this spawn recurrent async tasks with volley
                 selfDriving.start(MainActivity.this);
@@ -277,7 +277,7 @@ public class MainActivity extends AppCompatActivity implements OnBluetoothDevice
                 ByteBuffer buffer = ByteBuffer.wrap(data);
                 buffer.order(ByteOrder.LITTLE_ENDIAN);
                 float received = buffer.getFloat();
-                Log.i("MainActivity", "BLE notify " + received);
+                logger.i( "BLE notify " + received);
                 selfDriving.receiveBLData(received);
             }
         }
@@ -285,7 +285,7 @@ public class MainActivity extends AppCompatActivity implements OnBluetoothDevice
 
 
     public void btSendBytes(byte[] data) {
-        Log.i("alex", String.valueOf(data));
+        logger.i("btSendBytes"+ String.valueOf(data));
         if (mBluetoothLeService != null &&
                 mConnectionState.equals(BluetoothLeService.ACTION_GATT_CONNECTED)) {
             mBluetoothLeService.writeCharacteristic(data);
@@ -295,7 +295,7 @@ public class MainActivity extends AppCompatActivity implements OnBluetoothDevice
     private class MyBluetoothScanCallBack implements BluetoothScan.BluetoothScanCallBack {
         @Override
         public void onLeScanInitFailure(int failureCode) {
-            Log.i("MainActivity", "onLeScanInitFailure()");
+            logger.i( "onLeScanInitFailure()");
             switch (failureCode) {
                 case BluetoothScan.SCAN_FEATURE_ERROR:
                     showMsg("scan_feature_error");
@@ -310,10 +310,10 @@ public class MainActivity extends AppCompatActivity implements OnBluetoothDevice
 
         @Override
         public void onLeScanInitSuccess(int successCode) {
-            Log.i("MainActivity", "onLeScanInitSuccess()");
+            logger.i( "onLeScanInitSuccess()");
             switch (successCode) {
                 case BluetoothScan.SCAN_BEGIN_SCAN:
-                    Log.i("MainActivity", "successCode : " + successCode);
+                    logger.i( "successCode : " + successCode);
                     break;
                 case BluetoothScan.SCAN_NEED_ENADLE:
                     Intent enableBtIntent = new Intent(BluetoothAdapter.ACTION_REQUEST_ENABLE);
@@ -333,11 +333,11 @@ public class MainActivity extends AppCompatActivity implements OnBluetoothDevice
                 mBluetoothDeviceList.add(device);
                 mBluetoothDeviceAdapter.notifyDataSetChanged();
 
-                Log.i("MainActivity", "notifyDataSetChanged() " + "BluetoothName :　" + device.getName() +
+                logger.i( "notifyDataSetChanged() " + "BluetoothName :　" + device.getName() +
                         "  BluetoothAddress :　" + device.getAddress());
 
                 if ("MyESP32".equals(device.getName())) {
-                    Log.i("alex", "we connected to MyESP32.. automatically connecting");
+                    logger.i( "we connected to MyESP32.. automatically connecting");
 
                     if (mBluetoothLeService != null) {
 
