@@ -103,18 +103,29 @@ public class MainActivity extends AppCompatActivity implements OnBluetoothDevice
     public RequestQueue volleyQueue;
     private SensorManager sensorManager;
     private Sensor mACCELEROMETER;
+    private Sensor mMagneticField;
     public float  acceleRometer_x = 0,  acceleRometer_y = 0,  acceleRometer_z = 0;
     public int accellerometer_count = 0;
+    public int inclination = 0;
+    private final float[] accelerometerReading = new float[3];
+    private final float[] magnetometerReading = new float[3];
 
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        sensorManager = (SensorManager) getSystemService(SENSOR_SERVICE);
+
+
+        // SENSORS
         mACCELEROMETER = sensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER);
-        sensorManager.registerListener(this,mACCELEROMETER, SensorManager.SENSOR_DELAY_UI);
-
-
+        if (mACCELEROMETER != null) {
+            sensorManager.registerListener(this,mACCELEROMETER, SensorManager.SENSOR_DELAY_UI);
+        }
+        mMagneticField = sensorManager.getDefaultSensor(Sensor.TYPE_MAGNETIC_FIELD);
+        if (mMagneticField != null) {
+            sensorManager.registerListener(this, mMagneticField,
+                    SensorManager.SENSOR_DELAY_NORMAL, SensorManager.SENSOR_DELAY_UI);
+        }
 
         InfluxDBWrites.sendBluetoothStatus(MainActivity.this);
 
@@ -140,43 +151,89 @@ public class MainActivity extends AppCompatActivity implements OnBluetoothDevice
         // Do something here if sensor accuracy changes.
     }
 
+    /* computes inclination from current acceleromoter values s
+    stored in acceleromoeterReading
+    TODO (mack): make sure this work, if it doesn't change it with your magnetometerReading with rotMatrix
+    run the add and log the value of inclination and check if it changes when you move the phone
+     */
+    private int computeInclination(){
+        float [] g = accelerometerReading.clone();
+
+        double norm_Of_g = Math.sqrt(g[0] * g[0] + g[1] * g[1] + g[2] * g[2]);
+
+        // Normalize the accelerometer vector
+        g[0] = (float) (g[0] / norm_Of_g);
+        g[1] = (float) (g[1] / norm_Of_g);
+        g[2] = (float) (g[2] / norm_Of_g);
+        int inclination = (int) Math.round(Math.toDegrees(Math.acos(g[2])));
+        return inclination;
+    }
+
+    /* we want to keep a running max of accellerometer values
+    that we send every X seconds to the database, instead of sending at every reading
+     */
+    private void updateAccelerometerValues(float[] currentAccelerometerValues, int currentInclination){
+        // TODO (mack): can we fix this variable name and put R lower case? let's try to keep namin consistent
+        // will increase our dev speed
+        if(Math.abs(currentAccelerometerValues[0]) > Math.abs(acceleRometer_x)){
+            acceleRometer_x = currentAccelerometerValues[0];
+        };
+        if(Math.abs(currentAccelerometerValues[1]) > Math.abs(acceleRometer_y)){
+            acceleRometer_y = currentAccelerometerValues[1];
+        };
+        if(Math.abs(currentAccelerometerValues[2]) > Math.abs(acceleRometer_z)){
+            acceleRometer_z = currentAccelerometerValues[2];
+        };
+        if(Math.abs(currentInclination) > Math.abs(inclination)){
+            inclination = currentInclination;
+        };
+    }
+
 
     @Override
     public void onSensorChanged(SensorEvent event) {
-/*        // alpha is calculated as t / (t + dT)
-        // with t, the low-pass filter's time-constant
-        // and dT, the event delivery rate;*/
-
-        accellerometer_count += 1;
-        acceleRometer_x = Math.max(event.values[0], acceleRometer_x);
-        acceleRometer_y = Math.max(event.values[1], acceleRometer_y);
-        acceleRometer_z = Math.max(event.values[2], acceleRometer_z);
         this.logger.i("[androidAccelerometer] onSensorChanged");
+        if (event.sensor.getType() == Sensor.TYPE_ACCELEROMETER) {
+            System.arraycopy(event.values, 0, accelerometerReading,
+                    0, accelerometerReading.length);
+            int currentInclination = computeInclination();
 
-        if (accellerometer_count == 20){
-            this.logger.i("[androidAccelerometer] count triggered");
-            class sendDataTask extends AsyncTask<Void, Void, Boolean> {
-                @Override
-                protected Boolean doInBackground(Void... voids) {
-                    InfluxDBWrites.sendAndroidAccelerometer( acceleRometer_x );
-                    return true;
-                }
-
-                protected void onPostExecute(Boolean result) {
-                    if (result) {
-                        MainActivity.this.logger.i( "[androidAccelerometer] data sent to influxdb success");
-                    } else {
-                        MainActivity.this.logger.i( "[androidAccelerometer] data sent to influxdb fail");
+            accellerometer_count += 1;
+            updateAccelerometerValues(accelerometerReading, currentInclination);
+            if (accellerometer_count == 20){
+                this.logger.i("[androidAccelerometer] count triggered");
+                class sendDataTask extends AsyncTask<Void, Void, Boolean> {
+                    @Override
+                    protected Boolean doInBackground(Void... voids) {
+                        // TODO (mack): send all data including inclination to influxdb make sure they arrive on the other end
+                        InfluxDBWrites.sendAndroidAccelerometer( acceleRometer_x );
+                        return true;
                     }
-                }
 
+                    protected void onPostExecute(Boolean result) {
+                        if (result) {
+                            MainActivity.this.logger.i( "[androidAccelerometer] data sent to influxdb success");
+                        } else {
+                            MainActivity.this.logger.i( "[androidAccelerometer] data sent to influxdb fail");
+                        }
+                    }
+
+                }
+                new sendDataTask().execute();
+                accellerometer_count = 0;
+                acceleRometer_x = 0;
+                acceleRometer_y = 0;
+                acceleRometer_z = 0;
+                inclination = 0;
             }
-            new sendDataTask().execute();
-            accellerometer_count = 0;
-            acceleRometer_x = -100000;
-            acceleRometer_y = -100000;
-            acceleRometer_z = -100000;
+
+        } else if (event.sensor.getType() == Sensor.TYPE_MAGNETIC_FIELD) {
+            System.arraycopy(event.values, 0, magnetometerReading,
+                    0, magnetometerReading.length);
         }
+
+
+
     }
 
 
