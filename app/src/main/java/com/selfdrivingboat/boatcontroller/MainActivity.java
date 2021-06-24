@@ -110,10 +110,14 @@ public class MainActivity extends AppCompatActivity implements OnBluetoothDevice
         initData();
         initService();
         logger.w("main activity started");
+
+        // TEMP CODE TO CALL CAMERA
+        SelfDrivingBoatCamera camera = new SelfDrivingBoatCamera(MyApplication.context());
+        camera.takePicture();
     }
 
     @Override
-    protected void onResume() {
+    protected void onResume(){
         super.onResume();
         initReceiver();
         scanLeDevice(true);
