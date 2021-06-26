@@ -106,7 +106,7 @@ public class MainActivity extends AppCompatActivity implements OnBluetoothDevice
     private Sensor mMagneticField;
     public float  acceleRometer_x = 0,  acceleRometer_y = 0,  acceleRometer_z = 0;
     public int accellerometer_count = 0;
-    public int inclination = 0;
+    public float inclination = 0;
     private final float[] accelerometerReading = new float[3];
     private final float[] magnetometerReading = new float[3];
 
@@ -157,7 +157,7 @@ public class MainActivity extends AppCompatActivity implements OnBluetoothDevice
     TODO (mack): make sure this work, if it doesn't change it with your magnetometerReading with rotMatrix
     run the add and log the value of inclination and check if it changes when you move the phone
      */
-    private int computeInclination(){
+    private float computeInclination(){
         float [] g = accelerometerReading.clone();
 
         double norm_Of_g = Math.sqrt(g[0] * g[0] + g[1] * g[1] + g[2] * g[2]);
@@ -166,7 +166,7 @@ public class MainActivity extends AppCompatActivity implements OnBluetoothDevice
         g[0] = (float) (g[0] / norm_Of_g);
         g[1] = (float) (g[1] / norm_Of_g);
         g[2] = (float) (g[2] / norm_Of_g);
-        int inclination = (int) Math.round(Math.toDegrees(Math.acos(g[2])));
+        float inclination = (int) Math.round(Math.toDegrees(Math.acos(g[2])));
         logger.i(String.valueOf(inclination));
         return inclination;
 
@@ -175,7 +175,7 @@ public class MainActivity extends AppCompatActivity implements OnBluetoothDevice
     /* we want to keep a running max of accellerometer values
     that we send every X seconds to the database, instead of sending at every reading
      */
-    private void updateAccelerometerValues(float[] currentAccelerometerValues, int currentInclination){
+    private void updateAccelerometerValues(float[] currentAccelerometerValues, float currentInclination){
         // TODO (mack): can we fix this variable name and put R lower case? let's try to keep namin consistent
         // will increase our dev speed
         if(Math.abs(currentAccelerometerValues[0]) > Math.abs(acceleRometer_x)){
@@ -199,7 +199,7 @@ public class MainActivity extends AppCompatActivity implements OnBluetoothDevice
         if (event.sensor.getType() == Sensor.TYPE_ACCELEROMETER) {
             System.arraycopy(event.values, 0, accelerometerReading,
                     0, accelerometerReading.length);
-            int currentInclination = computeInclination();
+            float currentInclination = computeInclination();
 
             accellerometer_count += 1;
             updateAccelerometerValues(accelerometerReading, currentInclination);
@@ -209,7 +209,7 @@ public class MainActivity extends AppCompatActivity implements OnBluetoothDevice
                     @Override
                     protected Boolean doInBackground(Void... voids) {
                         // TODO (mack): send all data including inclination to influxdb make sure they arrive on the other end
-                        InfluxDBWrites.sendAndroidAccelerometer( inclination );
+                        InfluxDBWrites.sendAndroidAccelerometer(acceleRometer_x,acceleRometer_z,acceleRometer_y,inclination);
                         return true;
                     }
 
