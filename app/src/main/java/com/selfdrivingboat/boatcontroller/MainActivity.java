@@ -117,6 +117,7 @@ public class MainActivity extends AppCompatActivity implements OnBluetoothDevice
 
 
         // SENSORS
+        sensorManager = (SensorManager)getSystemService(Context.SENSOR_SERVICE);
         mACCELEROMETER = sensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER);
         if (mACCELEROMETER != null) {
             sensorManager.registerListener(this,mACCELEROMETER, SensorManager.SENSOR_DELAY_UI);
@@ -166,7 +167,9 @@ public class MainActivity extends AppCompatActivity implements OnBluetoothDevice
         g[1] = (float) (g[1] / norm_Of_g);
         g[2] = (float) (g[2] / norm_Of_g);
         int inclination = (int) Math.round(Math.toDegrees(Math.acos(g[2])));
+        logger.i(String.valueOf(inclination));
         return inclination;
+
     }
 
     /* we want to keep a running max of accellerometer values
@@ -186,7 +189,7 @@ public class MainActivity extends AppCompatActivity implements OnBluetoothDevice
         };
         if(Math.abs(currentInclination) > Math.abs(inclination)){
             inclination = currentInclination;
-        };
+        }
     }
 
 
@@ -206,7 +209,7 @@ public class MainActivity extends AppCompatActivity implements OnBluetoothDevice
                     @Override
                     protected Boolean doInBackground(Void... voids) {
                         // TODO (mack): send all data including inclination to influxdb make sure they arrive on the other end
-                        InfluxDBWrites.sendAndroidAccelerometer( acceleRometer_x );
+                        InfluxDBWrites.sendAndroidAccelerometer( inclination );
                         return true;
                     }
 
