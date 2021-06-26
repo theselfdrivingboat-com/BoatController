@@ -11,7 +11,7 @@ import com.datadog.android.log.Logger;
 import com.datadog.android.privacy.TrackingConsent;
 
 public class DatadogLogger {
-    private static Logger logger = null;
+    public static Logger logger = null;
 
     public static void initialiseLogger(Context context) {
         Configuration config = new Configuration.Builder(

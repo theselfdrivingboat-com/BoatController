@@ -32,6 +32,8 @@ import com.google.android.gms.location.LocationRequest;
 import com.google.android.gms.location.LocationResult;
 import com.google.android.gms.tasks.OnSuccessListener;
 
+import static com.selfdrivingboat.boatcontroller.DatadogLogger.logger;
+
 public class SelfDriving {
 
     MainActivity activity;
@@ -311,11 +313,12 @@ public class SelfDriving {
             @Override
             protected Boolean doInBackground(Void... voids) {
                 InfluxDBWrites.sendBluetoothStatus(activity);
-                InfluxDBWrites.sendMPU6050Accelerometer(data[0], data[1], data[2],data[10]);
+                InfluxDBWrites.sendMPU6050Accelerometer(data[0], data[1], data[2]);
                 InfluxDBWrites.sendMPU6050Gyroscope(data[3], data[4], data[5]);
                 InfluxDBWrites.sendMPU6050Angle(data[6], data[7]);
                 InfluxDBWrites.sendMPU6050Temperature(data[8]);
                 InfluxDBWrites.sendBatteryLevel(data[9]);
+                InfluxDBWrites.sendAndroidAccelerometer(data[10], data[11], data[12],data[13]);
                 if (locations != null && !locations.isEmpty()) {
                     InfluxDBWrites.sendGPS(locations.get(locations.size() - 1));
                 }

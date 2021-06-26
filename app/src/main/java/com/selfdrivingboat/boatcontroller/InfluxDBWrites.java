@@ -39,7 +39,7 @@ public class InfluxDBWrites {
                 "status", "\"" + activity.mConnectionState + "\"");
     }
 
-    public static void sendMPU6050Accelerometer(float x, float y, float z,float inclination){
+    public static void sendMPU6050Accelerometer(float x, float y, float z){
         HTTPwrite("accelerometer",
                 "device", "MPU6050",
                 "x", String.valueOf(x));
@@ -49,9 +49,7 @@ public class InfluxDBWrites {
         HTTPwrite("accelerometer",
                 "device", "MPU6050",
                 "z", String.valueOf(z));
-        HTTPwrite("accelerometer",
-                "device", "MPU6050",
-                "inclination", String.valueOf(inclination));
+
     }
 
     public static void sendAndroidAccelerometer( float x,float y, float z,float inclination){

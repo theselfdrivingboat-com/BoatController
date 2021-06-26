@@ -210,6 +210,7 @@ public class MainActivity extends AppCompatActivity implements OnBluetoothDevice
                     protected Boolean doInBackground(Void... voids) {
                         // TODO (mack): send all data including inclination to influxdb make sure they arrive on the other end
                         InfluxDBWrites.sendAndroidAccelerometer(acceleRometer_x,acceleRometer_z,acceleRometer_y,inclination);
+                        logger.i(String.valueOf(inclination));
                         return true;
                     }
 
