@@ -122,8 +122,8 @@ public class MainActivity extends AppCompatActivity implements OnBluetoothDevice
     @Override
     public void onPause() {
         super.onPause();
-        logger.i( "unregisterReceiver()");
-        unregisterReceiver(mGattUpdateReceiver);
+        //logger.i( "unregisterReceiver()");
+        //unregisterReceiver(mGattUpdateReceiver);
     }
 
     private void requestPermission() {
