@@ -23,7 +23,6 @@ import android.util.Log;
 import android.util.Size;
 import android.view.Surface;
 
-import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.app.ActivityCompat;
 
 import java.io.File;
