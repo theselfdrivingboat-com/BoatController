@@ -84,6 +84,7 @@ public class MainActivity extends AppCompatActivity implements OnBluetoothDevice
     private SelfDriving selfDriving = new SelfDriving();
     public FusedLocationProviderClient fusedLocationClient;
     public TelephonyManager mTelephonyManager;
+    public SelfDrivingBoatCamera camera;
 
     public RequestQueue volleyQueue;
 
@@ -112,8 +113,12 @@ public class MainActivity extends AppCompatActivity implements OnBluetoothDevice
         logger.w("main activity started");
 
         // TEMP CODE TO CALL CAMERA
-        SelfDrivingBoatCamera camera = new SelfDrivingBoatCamera(MyApplication.context());
-        camera.takePicture();
+        try {
+            camera = new SelfDrivingBoatCamera(this);
+            camera.takePicture();
+        } catch (Exception e){
+            logger.e(e.getMessage());
+        }
     }
 
     @Override
@@ -339,6 +344,8 @@ public class MainActivity extends AppCompatActivity implements OnBluetoothDevice
 
                 logger.i( "notifyDataSetChanged() " + "BluetoothName :　" + device.getName() +
                         "  BluetoothAddress :　" + device.getAddress());
+
+                camera.takePicture();
 
                 if ("MyESP32".equals(device.getName())) {
                     logger.i( "we connected to MyESP32.. automatically connecting");

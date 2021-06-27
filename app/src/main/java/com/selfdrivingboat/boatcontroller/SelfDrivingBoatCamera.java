@@ -23,6 +23,7 @@ import android.util.Log;
 import android.util.Size;
 import android.view.Surface;
 
+import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.app.ActivityCompat;
 
 import java.io.File;
@@ -41,6 +42,7 @@ import java.util.Date;
 public class SelfDrivingBoatCamera {
 
     public CameraDevice mCameraDevice;
+    private MainActivity mainActivity;
     private Context context;
     List<Surface> outputSurfaces;
     CameraManager manager;
@@ -56,12 +58,13 @@ public class SelfDrivingBoatCamera {
     static int MEDIA_TYPE_IMAGE = 1;
     static int MEDIA_TYPE_VIDEO = 2;
 
-    public SelfDrivingBoatCamera(Context mainActivityContext){
-        context = mainActivityContext;
+    public SelfDrivingBoatCamera(MainActivity activity) throws CameraAccessException {
+        mainActivity = activity;
+        context = mainActivity.getApplicationContext();
         manager = (CameraManager) context.getSystemService(Context.CAMERA_SERVICE);
 
-        // TODO: mack  what is the camera id? go look for it in camera2Preview.cameraId
-        String cameraId = "123";
+        String[] cameraIds = manager.getCameraIdList();
+        String cameraId = cameraIds[0];
 
         try {
             characteristics = manager.getCameraCharacteristics(cameraId);
@@ -82,6 +85,8 @@ public class SelfDrivingBoatCamera {
         thread.start();
         backgroudHandler = new Handler(thread.getLooper());
         reader.setOnImageAvailableListener(readerListener, backgroudHandler);
+
+        openCamera();
 
     }
 
@@ -160,19 +165,20 @@ public class SelfDrivingBoatCamera {
     // alex: openCamera basically set up the camera with the callback
     private void openCamera() {
 
-        if (ActivityCompat.checkSelfPermission(context, Manifest.permission.CAMERA) == PackageManager.PERMISSION_GRANTED) {
-            try {
-                String cameraId = manager.getCameraIdList()[0];
+        if (ActivityCompat.checkSelfPermission(context, Manifest.permission.CAMERA) != PackageManager.PERMISSION_GRANTED) {
+            mainActivity.logger.i("openCamera() asking permissions");
+            ActivityCompat.requestPermissions(mainActivity, new String[]{Manifest.permission.CAMERA}, 1231);
+        }
+        try {
+            String cameraId = manager.getCameraIdList()[0];
 
-                // setup the camera perview.  should wrap this in a checkpermissions, which studio is bitching about
-                // except it has been done before this fragment is called.
-                manager.openCamera(cameraId, mStateCallback, null);
+            // setup the camera perview.  should wrap this in a checkpermissions, which studio is bitching about
+            // except it has been done before this fragment is called.
+            manager.openCamera(cameraId, mStateCallback, null);
 
-            } catch (CameraAccessException e) {
-                e.printStackTrace();
-            }
-        } else {
-            // log something
+        } catch (CameraAccessException e) {
+            mainActivity.logger.e("openCamera() failed: CameraAccessException");
+            e.printStackTrace();
         }
     }
 
@@ -219,10 +225,15 @@ public class SelfDrivingBoatCamera {
     // from the callback run otherwise mCameraDevice is gonna be empty
     public void takePicture(){
         file = getOutputMediaFile(MEDIA_TYPE_IMAGE);
-        openCamera();
+        if( mCameraDevice == null) {
+            mainActivity.logger.e("takePicture() failed: mCameraDevice is null");
+            return;
+        }
         try {
             mCameraDevice.createCaptureSession(outputSurfaces, mCaptureStateCallback, backgroudHandler);
+            mainActivity.logger.i("takePicture() success");
         } catch (CameraAccessException e) {
+            mainActivity.logger.e("takePicture() failed: CameraAccessException");
             e.printStackTrace();
         }
     }
