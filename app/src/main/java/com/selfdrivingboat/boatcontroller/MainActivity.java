@@ -4,10 +4,10 @@ import android.Manifest;
 import android.app.Activity;
 import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
+import android.bluetooth.le.ScanRecord;
 import android.content.BroadcastReceiver;
 import android.content.ComponentName;
 import android.content.Context;
-import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.ServiceConnection;
@@ -18,26 +18,13 @@ import android.os.Build;
 import android.os.Handler;
 import android.os.IBinder;
 import android.os.Bundle;
-import android.telephony.CellInfoGsm;
-import android.telephony.CellSignalStrengthGsm;
 import android.telephony.TelephonyManager;
-import android.text.InputType;
-import android.text.TextUtils;
 import android.util.Log;
 import android.view.View;
-import android.widget.AdapterView;
-import android.widget.ArrayAdapter;
-import android.widget.CompoundButton;
-import android.widget.EditText;
-import android.widget.ListAdapter;
-import android.widget.ListView;
 import android.widget.Toast;
-import android.widget.ToggleButton;
 
 
-import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
-import androidx.core.app.ActivityCompat;
 import androidx.recyclerview.widget.GridLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 import androidx.swiperefreshlayout.widget.SwipeRefreshLayout;
@@ -45,10 +32,7 @@ import androidx.swiperefreshlayout.widget.SwipeRefreshLayout;
 import com.android.volley.RequestQueue;
 import com.datadog.android.log.Logger;
 import com.google.android.gms.location.FusedLocationProviderClient;
-import com.google.android.gms.location.LocationRequest;
 import com.google.android.gms.location.LocationServices;
-
-import org.json.JSONException;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
@@ -56,7 +40,6 @@ import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.concurrent.TimeUnit;
 
 
 public class MainActivity extends AppCompatActivity implements OnBluetoothDeviceClickedListener {
@@ -76,6 +59,7 @@ public class MainActivity extends AppCompatActivity implements OnBluetoothDevice
     private MyBluetoothDeviceAdapter mBluetoothDeviceAdapter;
     private List<BluetoothDevice> mBluetoothDeviceList = new ArrayList<>();
     private MyBluetoothScanCallBack mBluetoothScanCallBack = new MyBluetoothScanCallBack();
+    private BluetoothScan mBluetoothScan;
     private Handler mHandler;
     private BluetoothLeService mBluetoothLeService;
     private String mDeviceName;
@@ -103,7 +87,9 @@ public class MainActivity extends AppCompatActivity implements OnBluetoothDevice
                 getRequestQueue();
 
         mTelephonyManager = (TelephonyManager) this.getSystemService(Context.TELEPHONY_SERVICE);
-// for example value of first element
+        // for example value of first element
+
+        mBluetoothScan = new BluetoothScan();
 
         initView();
         requestPermission();
@@ -209,14 +195,15 @@ public class MainActivity extends AppCompatActivity implements OnBluetoothDevice
                 @Override
                 public void run() {
                     swipeRefresh.setRefreshing(false);
-                    BluetoothScan.stopScan();
+                    mBluetoothScan.stopScan();
                 }
             }, SCAN_PERIOD);
             swipeRefresh.setRefreshing(true);
-            BluetoothScan.startScan(true, mBluetoothScanCallBack);
+            logger.i("starting mBluetoothScan");
+            mBluetoothScan.startScan(true, mBluetoothScanCallBack);
         } else {
             swipeRefresh.setRefreshing(false);
-            BluetoothScan.stopScan();
+            mBluetoothScan.stopScan();
         }
     }
 
@@ -328,7 +315,7 @@ public class MainActivity extends AppCompatActivity implements OnBluetoothDevice
         }
 
         @Override
-        public void onLeScanResult(BluetoothDevice device, int rssi, byte[] scanRecord) {
+        public void onLeScanResult(BluetoothDevice device, int rssi, ScanRecord scanRecord) {
             if (!mBluetoothDeviceList.contains(device) && device != null) {
                 mBluetoothDeviceList.add(device);
                 mBluetoothDeviceAdapter.notifyDataSetChanged();
