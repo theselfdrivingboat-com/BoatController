@@ -104,8 +104,11 @@ public class MainActivity extends AppCompatActivity implements OnBluetoothDevice
     private SensorManager sensorManager;
     private Sensor mACCELEROMETER;
     private Sensor mMagneticField;
+    private Sensor mtemperature;
     public float  acceleRometer_x = 0,  acceleRometer_y = 0,  acceleRometer_z = 0;
     public int accellerometer_count = 0;
+    public int  temprature_count = 0;
+    public float temperature;
     public float inclination = 0;
     private final float[] accelerometerReading = new float[3];
     private final float[] magnetometerReading = new float[3];
@@ -127,7 +130,11 @@ public class MainActivity extends AppCompatActivity implements OnBluetoothDevice
             sensorManager.registerListener(this, mMagneticField,
                     SensorManager.SENSOR_DELAY_NORMAL, SensorManager.SENSOR_DELAY_UI);
         }
-
+        mtemperature = sensorManager.getDefaultSensor(Sensor.TYPE_AMBIENT_TEMPERATURE);
+        if (mtemperature != null) {
+            sensorManager.registerListener(this, mtemperature,
+                    SensorManager.SENSOR_DELAY_NORMAL, SensorManager.SENSOR_DELAY_UI);
+        }
         InfluxDBWrites.sendBluetoothStatus(MainActivity.this);
 
         fusedLocationClient = LocationServices.getFusedLocationProviderClient(this);
@@ -203,22 +210,22 @@ public class MainActivity extends AppCompatActivity implements OnBluetoothDevice
 
             accellerometer_count += 1;
             updateAccelerometerValues(accelerometerReading, currentInclination);
-            if (accellerometer_count == 20){
+            if (accellerometer_count == 20) {
                 this.logger.i("[androidAccelerometer] count triggered");
                 class sendDataTask extends AsyncTask<Void, Void, Boolean> {
                     @Override
                     protected Boolean doInBackground(Void... voids) {
                         // TODO (mack): send all data including inclination to influxdb make sure they arrive on the other end
-                        InfluxDBWrites.sendAndroidAccelerometer(acceleRometer_x,acceleRometer_z,acceleRometer_y,inclination);
+                        InfluxDBWrites.sendAndroidAccelerometer(acceleRometer_x, acceleRometer_z, acceleRometer_y, inclination);
                         logger.i(String.valueOf(inclination));
                         return true;
                     }
 
                     protected void onPostExecute(Boolean result) {
                         if (result) {
-                            MainActivity.this.logger.i( "[androidAccelerometer] data sent to influxdb success");
+                            MainActivity.this.logger.i("[androidAccelerometer] data sent to influxdb success");
                         } else {
-                            MainActivity.this.logger.i( "[androidAccelerometer] data sent to influxdb fail");
+                            MainActivity.this.logger.i("[androidAccelerometer] data sent to influxdb fail");
                         }
                     }
 
@@ -231,13 +238,16 @@ public class MainActivity extends AppCompatActivity implements OnBluetoothDevice
                 inclination = 0;
             }
 
-        } else if (event.sensor.getType() == Sensor.TYPE_MAGNETIC_FIELD) {
-            System.arraycopy(event.values, 0, magnetometerReading,
-                    0, magnetometerReading.length);
         }
-
-
-
+        else if (event.sensor.getType() == Sensor.TYPE_AMBIENT_TEMPERATURE) {
+            this.logger.i("[temperature] onSensorChanged");
+            temperature = event.values[0];
+            logger.i(String.valueOf(temperature));
+        /*    temprature_count += 1;
+            if (temprature_count == 2) {*/
+            this.logger.i("[TEMPERATURE] count triggered");
+            InfluxDBWrites.sendMPU6050ambient_temperature(temperature);
+        }
     }
 
 
@@ -246,6 +256,7 @@ public class MainActivity extends AppCompatActivity implements OnBluetoothDevice
     protected void onResume() {
         super.onResume();
         sensorManager.registerListener(this,mACCELEROMETER, SensorManager.SENSOR_DELAY_NORMAL);
+        sensorManager.registerListener(this,mtemperature, SensorManager.SENSOR_DELAY_NORMAL);
         initReceiver();
         scanLeDevice(true);
 

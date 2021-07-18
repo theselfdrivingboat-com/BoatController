@@ -82,6 +82,12 @@ public class InfluxDBWrites {
                 "z", String.valueOf(z));
     }
 
+    public static void sendMPU6050ambient_temperature(float x){
+        HTTPwrite("temperature",
+                "device", "MPU6050",
+                "x", String.valueOf(x));
+    }
+
     public static void sendMPU6050Angle(float x, float y){
         HTTPwrite("angle",
                 "device", "MPU6050",

@@ -319,6 +319,7 @@ public class SelfDriving {
                 InfluxDBWrites.sendMPU6050Temperature(data[8]);
                 InfluxDBWrites.sendBatteryLevel(data[9]);
                 InfluxDBWrites.sendAndroidAccelerometer(data[10], data[11], data[12],data[13]);
+                InfluxDBWrites.sendMPU6050ambient_temperature(data[14]);
                 if (locations != null && !locations.isEmpty()) {
                     InfluxDBWrites.sendGPS(locations.get(locations.size() - 1));
                 }
