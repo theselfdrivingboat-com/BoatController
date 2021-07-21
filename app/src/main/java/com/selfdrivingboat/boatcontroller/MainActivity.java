@@ -120,6 +120,11 @@ public class MainActivity extends AppCompatActivity implements OnBluetoothDevice
                 requestPermissions(new String[]{Manifest.permission.ACCESS_COARSE_LOCATION},
                         PERMISSION_REQUEST_COARSE_LOCATION);
             }
+            if (this.checkSelfPermission(Manifest.permission.ACCESS_FINE_LOCATION)
+                    != PackageManager.PERMISSION_GRANTED) {
+                requestPermissions(new String[]{Manifest.permission.ACCESS_FINE_LOCATION},
+                        4);
+            }
             if (this.checkSelfPermission(Manifest.permission.ACCESS_BACKGROUND_LOCATION)
                     != PackageManager.PERMISSION_GRANTED) {
                 requestPermissions(new String[]{Manifest.permission.ACCESS_BACKGROUND_LOCATION},
