@@ -177,7 +177,8 @@ public class MainActivity extends AppCompatActivity implements OnBluetoothDevice
         g[1] = (float) (g[1] / norm_Of_g);
         g[2] = (float) (g[2] / norm_Of_g);
         float inclination = (int) Math.round(Math.toDegrees(Math.acos(g[2])));
-        logger.i(String.valueOf(inclination));
+        // logged to often
+        // logger.i(String.valueOf(inclination));
         return inclination;
 
     }
@@ -205,7 +206,8 @@ public class MainActivity extends AppCompatActivity implements OnBluetoothDevice
 
     @Override
     public void onSensorChanged(SensorEvent event) {
-        this.logger.i("[androidAccelerometer] onSensorChanged");
+        // commenting this logger cause this get called 2 times a second
+        //this.logger.i("[androidAccelerometer] onSensorChanged");
         if (event.sensor.getType() == Sensor.TYPE_ACCELEROMETER) {
             System.arraycopy(event.values, 0, accelerometerReading,
                     0, accelerometerReading.length);
@@ -213,7 +215,7 @@ public class MainActivity extends AppCompatActivity implements OnBluetoothDevice
 
             accellerometer_count += 1;
             updateAccelerometerValues(accelerometerReading, currentInclination);
-            if (accellerometer_count == 20) {
+            if (accellerometer_count == 200) {
                 this.logger.i("[androidAccelerometer] count triggered");
                 class sendDataTask extends AsyncTask<Void, Void, Boolean> {
                     @Override
