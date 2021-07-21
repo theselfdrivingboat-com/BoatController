@@ -4,6 +4,7 @@ import android.content.Context;
 import android.os.Build;
 import android.util.Log;
 
+import com.android.volley.BuildConfig;
 import com.datadog.android.Datadog;
 import com.datadog.android.core.configuration.Configuration;
 import com.datadog.android.core.configuration.Credentials;

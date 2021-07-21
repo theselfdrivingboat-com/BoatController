@@ -135,6 +135,9 @@ public class MainActivity extends AppCompatActivity implements OnBluetoothDevice
             sensorManager.registerListener(this, mtemperature,
                     SensorManager.SENSOR_DELAY_NORMAL, SensorManager.SENSOR_DELAY_UI);
         }
+        else{
+            this.logger.i("[androidTemperature]SENSOR NOT FOUND");
+        }
         InfluxDBWrites.sendBluetoothStatus(MainActivity.this);
 
         fusedLocationClient = LocationServices.getFusedLocationProviderClient(this);
@@ -238,15 +241,30 @@ public class MainActivity extends AppCompatActivity implements OnBluetoothDevice
                 inclination = 0;
             }
 
-        }
-        else if (event.sensor.getType() == Sensor.TYPE_AMBIENT_TEMPERATURE) {
-            this.logger.i("[temperature] onSensorChanged");
+        } else if (event.sensor.getType() == Sensor.TYPE_AMBIENT_TEMPERATURE) {
+            this.logger.i("[androidTemperature] onSensorChanged");
             temperature = event.values[0];
             logger.i(String.valueOf(temperature));
-        /*    temprature_count += 1;
-            if (temprature_count == 2) {*/
-            this.logger.i("[TEMPERATURE] count triggered");
-            InfluxDBWrites.sendMPU6050ambient_temperature(temperature);
+            temprature_count += 1;
+            if (temprature_count == 2) {
+                class sendDataTask extends AsyncTask<Void, Void, Boolean> {
+                    @Override
+                    protected Boolean doInBackground(Void... voids) {
+                        InfluxDBWrites.sendMPU6050ambient_temperature(temperature);
+                        return true;
+                    }
+                    protected void onPostExecute(Boolean result) {
+                        if (result) {
+                            MainActivity.this.logger.i(" [androidTemperature] data sent to influx");
+                        } else {
+                            MainActivity.this.logger.i("[androidTemperature] data sent to influxdb fail");
+                        }
+                    }
+                }
+                new sendDataTask().execute();
+                temperature = 0;
+                temprature_count = 0;
+            }
         }
     }
 
