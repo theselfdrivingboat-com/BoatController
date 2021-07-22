@@ -84,9 +84,42 @@ public class InfluxDBWrites {
 
     public static void sendMPU6050ambient_temperature(float x){
         HTTPwrite("temperature",
-                "device", "MPU6050",
+                "device", "AndroidBV5500",
                 "x", String.valueOf(x));
     }
+    public static void sendMPU6050magnetic_field(float magnetic_x, float magnetic_y, float magnetic_z) {
+        HTTPwrite("MagneticField",
+                "device", "AndroidBV5500",
+                "x", String.valueOf(magnetic_x));
+        HTTPwrite("MagneticField",
+                "device", "AndroidBV5500",
+                "y", String.valueOf(magnetic_y));
+        HTTPwrite("MagneticField",
+                "device", "AndroidBV5500",
+                "z", String.valueOf(magnetic_z));
+
+    }
+    public static void sendMPU6050proximity(float x){
+        HTTPwrite("Proximity",
+                "device", "AndroidBV5500",
+                "x", String.valueOf(x));
+    }
+    public static void sendMPU6050light(float x) {
+        HTTPwrite("light",
+                "device", "AndroidBV5500",
+                "x", String.valueOf(x));
+    }
+    public static void sendMPU6050gravity(float x, float y, float z) {
+    HTTPwrite("gravity",
+            "device", "AndroidBV5500",
+            "x", String.valueOf(x));
+        HTTPwrite("gravity",
+                "device", "AndroidBV5500",
+                "y", String.valueOf(y));
+        HTTPwrite("gravity",
+                "device", "AndroidBV5500",
+                "z", String.valueOf(z));
+}
 
     public static void sendMPU6050Angle(float x, float y){
         HTTPwrite("angle",
@@ -151,4 +184,7 @@ public class InfluxDBWrites {
             Log.i("influxdb", String.valueOf(e));
         }
     }
+
+
+
 }
