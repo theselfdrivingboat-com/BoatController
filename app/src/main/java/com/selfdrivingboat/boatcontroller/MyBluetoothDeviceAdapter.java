@@ -67,7 +67,7 @@ public class MyBluetoothDeviceAdapter extends RecyclerView.Adapter<com.selfdrivi
                 if (device == null) {
                     return;
                 }
-                BluetoothScan.stopScan();
+                //mBluetoothScan.stopScan();
 
                 mBluetoothClickListener.onBluetoothDeviceClicked(device.getName(), device.getAddress());
 

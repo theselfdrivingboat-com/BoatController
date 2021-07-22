@@ -6,6 +6,10 @@ import android.location.Location;
 import android.os.AsyncTask;
 import android.os.HandlerThread;
 import android.os.Looper;
+import android.telephony.CellInfoGsm;
+import android.telephony.CellInfoWcdma;
+import android.telephony.CellSignalStrengthGsm;
+import android.telephony.CellSignalStrengthWcdma;
 import android.util.Log;
 
 import androidx.annotation.NonNull;
@@ -150,6 +154,12 @@ public class SelfDriving {
     private void selfdriving_step() {
         // Initialize a new RequestQueue instance
         activity.logger.i( "new step");
+        try {
+            TimeUnit.SECONDS.sleep(1);
+        } catch (InterruptedException e) {
+            activity.logger.e(String.valueOf(e));
+        }
+        sendAndroidData();
 
         String url = "https://theselfdrivingboat.herokuapp.com/read_last_command?boat_name=5kgboat-001";
         JsonObjectRequest jsonObjectRequest = new JsonObjectRequest
@@ -206,19 +216,23 @@ public class SelfDriving {
                             try {
                                 TimeUnit.SECONDS.sleep(1);
                             } catch (InterruptedException e) {
-                                e.printStackTrace();
+                                activity.logger.e(String.valueOf(e));
                             }
                             boatStop();
                             try {
                                 TimeUnit.SECONDS.sleep(clock);
                             } catch (InterruptedException e) {
-                                e.printStackTrace();
+                                activity.logger.e(String.valueOf(e));
                             }
                             selfdriving_step();
 
                         } catch (JSONException e) {
-                            Log.e("selfdrivinglogs", "no command key from heroku! server down or corrupted?");
-                            e.printStackTrace();
+                            activity.logger.e("Error from HEROKU!!", e);
+                            try {
+                                TimeUnit.SECONDS.sleep(1);
+                            } catch (InterruptedException e2) {
+                                activity.logger.e(String.valueOf(e2));
+                            }
                             selfdriving_step();
                         }
                     }
@@ -226,7 +240,12 @@ public class SelfDriving {
 
                     @Override
                     public void onErrorResponse(VolleyError error) {
-                        Log.e("selfdrivinglogs", String.valueOf(error));
+                        activity.logger.e(String.valueOf(error));
+                        try {
+                            TimeUnit.SECONDS.sleep(1);
+                        } catch (InterruptedException e) {
+                            activity.logger.e(String.valueOf(e));
+                        }
                         selfdriving_step();
                     }
                 });
@@ -307,12 +326,50 @@ public class SelfDriving {
         selfdriving_step();
     }
 
+    private int getSignalStrength(){
+        if (ActivityCompat.checkSelfPermission(activity, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
+            activity.logger.e("PERMISSION ERROR FOR 4G SIGNAL STRENGTH");
+            return -1;
+        }
+        CellInfoWcdma cellInfoGsm = (CellInfoWcdma) activity.mTelephonyManager.getAllCellInfo().get(0);
+        CellSignalStrengthWcdma cellSignalStrengthGsm = cellInfoGsm.getCellSignalStrength();
+        int dbm = cellSignalStrengthGsm.getDbm();
+        activity.logger.i("signal strength "+ dbm);
+        return dbm;
+    }
+
+    public void sendAndroidData(){
+        class sendDataTask extends AsyncTask<Void, Void, Boolean> {
+            @Override
+            protected Boolean doInBackground(Void... voids) {
+                activity.logger.i( "sending influxdb anroid data.. doInBackground");
+                InfluxDBWrites.sendBluetoothStatus(activity);
+                InfluxDBWrites.sendSignalStrength(getSignalStrength());
+                if (locations != null && !locations.isEmpty()) {
+                    InfluxDBWrites.sendGPS(locations.get(locations.size() - 1));
+                }
+                return true;
+            }
+
+            protected void onPostExecute(Boolean result) {
+                if (result) {
+                    activity.logger.i( "android data sent to influxdb success");
+                } else {
+                    activity.logger.i( "android data sent to influxdb fail");
+                }
+            }
+
+        }
+        new sendDataTask().execute();
+
+    }
+
     public void sendBLData() {
 
         class sendDataTask extends AsyncTask<Void, Void, Boolean> {
             @Override
             protected Boolean doInBackground(Void... voids) {
-                InfluxDBWrites.sendBluetoothStatus(activity);
+                activity.logger.i( "sending influxdb bluetooth data.. doInBackground");
                 InfluxDBWrites.sendMPU6050Accelerometer(data[0], data[1], data[2]);
                 InfluxDBWrites.sendMPU6050Gyroscope(data[3], data[4], data[5]);
                 InfluxDBWrites.sendMPU6050Angle(data[6], data[7]);
@@ -332,9 +389,9 @@ public class SelfDriving {
 
             protected void onPostExecute(Boolean result) {
                 if (result) {
-                    activity.logger.i( "data sent to influxdb success");
+                    activity.logger.i( "bluetooth data sent to influxdb success");
                 } else {
-                    activity.logger.i( "data sent to influxdb fail");
+                    activity.logger.i( "bluetooth data sent to influxdb fail");
                 }
             }
 
