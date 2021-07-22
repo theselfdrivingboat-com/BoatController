@@ -4,11 +4,15 @@ package com.selfdrivingboat.boatcontroller;
 import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
 import android.bluetooth.BluetoothManager;
+import android.bluetooth.le.BluetoothLeScanner;
+import android.bluetooth.le.ScanCallback;
+import android.bluetooth.le.ScanRecord;
+import android.bluetooth.le.ScanResult;
 import android.content.Context;
 import android.content.pm.PackageManager;
 import android.util.Log;
 
-import androidx.core.content.ContextCompat;
+import java.util.List;
 
 
 public class BluetoothScan {
@@ -21,21 +25,24 @@ public class BluetoothScan {
     private static BluetoothAdapter mBluetoothAdapter;
     private static BluetoothScanCallBack mBluetoothScanCallBack;
 
-    public static void startScan(boolean autoEnable, BluetoothScanCallBack callBack) {
+    public void startScan(boolean autoEnable, BluetoothScanCallBack callBack) {
         mBluetoothScanCallBack = callBack;
         if (!isBluetoothSupport(autoEnable)) {
             return;
         }
         if (mBluetoothAdapter != null) {
-            mBluetoothAdapter.startLeScan(mLeScanCallback);
+            final BluetoothLeScanner bluetoothLeScanner = mBluetoothAdapter.getBluetoothLeScanner();
+            bluetoothLeScanner.startScan(mLeScanCallback);
         } else {
             Log.e("BluetoothScan", "mBluetoothAdapter is null.");
         }
     }
 
-    public static void stopScan() {
+    public void stopScan() {
+
+        final BluetoothLeScanner bluetoothLeScanner = mBluetoothAdapter.getBluetoothLeScanner();
         if (mBluetoothAdapter != null) {
-            mBluetoothAdapter.stopLeScan(mLeScanCallback);
+            bluetoothLeScanner.stopScan(mLeScanCallback);
         } else {
             Log.e("BluetoothScan","mBluetoothAdapter is null.");
         }
@@ -79,21 +86,32 @@ public class BluetoothScan {
     }
 
     // Device scan callback.
-    private static BluetoothAdapter.LeScanCallback mLeScanCallback = new BluetoothAdapter.LeScanCallback() {
+    private ScanCallback mLeScanCallback = new ScanCallback() {
         @Override
-        public void onLeScan(final BluetoothDevice device, int rssi, byte[] scanRecord) {
+        public void onScanResult(int callbackType, ScanResult result) {
+            super.onScanResult(callbackType, result);
             if (mBluetoothScanCallBack != null) {
-                mBluetoothScanCallBack.onLeScanResult(device, rssi, scanRecord);
+                mBluetoothScanCallBack.onLeScanResult(result.getDevice(), result.getRssi(), result.getScanRecord());
             } else {
                 Log.e("BluetoothScan","mBluetoothScanCallBack is null.");
             }
+        }
+
+        @Override
+        public void onBatchScanResults(List<ScanResult> results) {
+            super.onBatchScanResults(results);
+        }
+
+        @Override
+        public void onScanFailed(int errorCode) {
+            super.onScanFailed(errorCode);
         }
     };
 
     public interface BluetoothScanCallBack {
         void onLeScanInitFailure(int failureCode);
         void onLeScanInitSuccess(int successCode);
-        void onLeScanResult(BluetoothDevice device, int rssi, byte[] scanRecord);
+        void onLeScanResult(BluetoothDevice device, int rssi, ScanRecord scanRecord);
     }
 }
 

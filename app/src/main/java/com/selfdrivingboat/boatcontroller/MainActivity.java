@@ -5,10 +5,10 @@ import android.app.Activity;
 import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
 import android.content.AsyncQueryHandler;
+import android.bluetooth.le.ScanRecord;
 import android.content.BroadcastReceiver;
 import android.content.ComponentName;
 import android.content.Context;
-import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.ServiceConnection;
@@ -20,16 +20,9 @@ import android.os.Build;
 import android.os.Handler;
 import android.os.IBinder;
 import android.os.Bundle;
-import android.text.InputType;
-import android.text.TextUtils;
+import android.telephony.TelephonyManager;
 import android.util.Log;
 import android.view.View;
-import android.widget.AdapterView;
-import android.widget.ArrayAdapter;
-import android.widget.CompoundButton;
-import android.widget.EditText;
-import android.widget.ListAdapter;
-import android.widget.ListView;
 import android.widget.Toast;
 import android.widget.ToggleButton;
 import android.app.Activity;
@@ -45,31 +38,19 @@ import android.view.MenuItem;
 import android.view.View;
 import android.widget.ProgressBar;
 import android.widget.TextView;
-
-
-import androidx.appcompat.app.AlertDialog;
-import androidx.appcompat.app.AppCompatActivity;
-import androidx.core.app.ActivityCompat;
 import androidx.recyclerview.widget.GridLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 import androidx.swiperefreshlayout.widget.SwipeRefreshLayout;
-
 import com.android.volley.RequestQueue;
 import com.datadog.android.log.Logger;
 import com.google.android.gms.location.FusedLocationProviderClient;
-import com.google.android.gms.location.LocationRequest;
 import com.google.android.gms.location.LocationServices;
-
-import org.json.JSONException;
-
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.concurrent.TimeUnit;
-
 import static android.hardware.SensorManager.DATA_X;
 import static android.hardware.SensorManager.DATA_Y;
 import static android.hardware.SensorManager.DATA_Z;
@@ -92,6 +73,7 @@ public class MainActivity extends AppCompatActivity implements OnBluetoothDevice
     private MyBluetoothDeviceAdapter mBluetoothDeviceAdapter;
     private List<BluetoothDevice> mBluetoothDeviceList = new ArrayList<>();
     private MyBluetoothScanCallBack mBluetoothScanCallBack = new MyBluetoothScanCallBack();
+    private BluetoothScan mBluetoothScan;
     private Handler mHandler;
     private BluetoothLeService mBluetoothLeService;
     private String mDeviceName;
@@ -99,6 +81,7 @@ public class MainActivity extends AppCompatActivity implements OnBluetoothDevice
     public Logger logger = DatadogLogger.getInstance();
     private SelfDriving selfDriving = new SelfDriving();
     public FusedLocationProviderClient fusedLocationClient;
+    public TelephonyManager mTelephonyManager;
 
     public RequestQueue volleyQueue;
     private SensorManager sensorManager;
@@ -148,6 +131,11 @@ public class MainActivity extends AppCompatActivity implements OnBluetoothDevice
 
         volleyQueue = VolleySingleton.getInstance(this.getApplicationContext()).
                 getRequestQueue();
+
+        mTelephonyManager = (TelephonyManager) this.getSystemService(Context.TELEPHONY_SERVICE);
+        // for example value of first element
+
+        mBluetoothScan = new BluetoothScan();
 
         initView();
         requestPermission();
@@ -288,6 +276,8 @@ public class MainActivity extends AppCompatActivity implements OnBluetoothDevice
         Log.i("MainActivity", "unregisterReceiver()");
         unregisterReceiver(mGattUpdateReceiver);
         sensorManager.unregisterListener(this);
+        //logger.i( "unregisterReceiver()");
+        //unregisterReceiver(mGattUpdateReceiver);
     }
 
     private void requestPermission() {
@@ -297,6 +287,16 @@ public class MainActivity extends AppCompatActivity implements OnBluetoothDevice
                     != PackageManager.PERMISSION_GRANTED) {
                 requestPermissions(new String[]{Manifest.permission.ACCESS_COARSE_LOCATION},
                         PERMISSION_REQUEST_COARSE_LOCATION);
+            }
+            if (this.checkSelfPermission(Manifest.permission.ACCESS_FINE_LOCATION)
+                    != PackageManager.PERMISSION_GRANTED) {
+                requestPermissions(new String[]{Manifest.permission.ACCESS_FINE_LOCATION},
+                        4);
+            }
+            if (this.checkSelfPermission(Manifest.permission.ACCESS_BACKGROUND_LOCATION)
+                    != PackageManager.PERMISSION_GRANTED) {
+                requestPermissions(new String[]{Manifest.permission.ACCESS_BACKGROUND_LOCATION},
+                        3);
             }
         }
     }
@@ -323,7 +323,7 @@ public class MainActivity extends AppCompatActivity implements OnBluetoothDevice
     }
 
     private void initService() {
-        Log.i("MainActivity", "initService()");
+        logger.i( "initService()");
 
         if (mBluetoothLeService == null) {
             Intent gattServiceIntent = new Intent(this, BluetoothLeService.class);
@@ -373,21 +373,22 @@ public class MainActivity extends AppCompatActivity implements OnBluetoothDevice
                 @Override
                 public void run() {
                     swipeRefresh.setRefreshing(false);
-                    BluetoothScan.stopScan();
+                    mBluetoothScan.stopScan();
                 }
             }, SCAN_PERIOD);
             swipeRefresh.setRefreshing(true);
-            BluetoothScan.startScan(true, mBluetoothScanCallBack);
+            logger.i("starting mBluetoothScan");
+            mBluetoothScan.startScan(true, mBluetoothScanCallBack);
         } else {
             swipeRefresh.setRefreshing(false);
-            BluetoothScan.stopScan();
+            mBluetoothScan.stopScan();
         }
     }
 
     @Override
     public void onBluetoothDeviceClicked(String name, String address) {
 
-        Log.i("MainActivity", "Attempt to connect device : " + name + "(" + address + ")");
+        logger.i( "Attempt to connect device : " + name + "(" + address + ")");
         mDeviceName = name;
         mDeviceAddress = address;
 
@@ -403,7 +404,7 @@ public class MainActivity extends AppCompatActivity implements OnBluetoothDevice
     }
 
     private void initReceiver() {
-        Log.i("MainActivity", "initReceiver()");
+        logger.i( "initReceiver()");
         final IntentFilter intentFilter = new IntentFilter();
         intentFilter.addAction(BluetoothLeService.ACTION_GATT_CONNECTED);
         intentFilter.addAction(BluetoothLeService.ACTION_GATT_DISCONNECTED);
@@ -418,20 +419,20 @@ public class MainActivity extends AppCompatActivity implements OnBluetoothDevice
         public void onReceive(Context context, Intent intent) {
             String action = intent.getAction();
             if (BluetoothLeService.ACTION_GATT_CONNECTED.equals(action)) {
-                Log.i("MainActivity", "ACTION_GATT_CONNECTED!!!");
+                logger.i( "ACTION_GATT_CONNECTED!!!");
                 showMsg("Connected device ..");
 
                 mConnectionState = BluetoothLeService.ACTION_GATT_CONNECTED;
                 swipeRefresh.setRefreshing(false);
 
             } else if (BluetoothLeService.ACTION_GATT_DISCONNECTED.equals(action)) {
-                Log.i("MainActivity", "ACTION_GATT_DISCONNECTED!!!");
+                logger.i( "ACTION_GATT_DISCONNECTED!!!");
                 showMsg("disconnected");
                 mConnectionState = BluetoothLeService.ACTION_GATT_DISCONNECTED;
                 swipeRefresh.setRefreshing(false);
             } else if (BluetoothLeService.ACTION_GATT_SERVICES_DISCOVERED.equals(action)) {
 
-                Log.i("alex", "service discovered");
+                logger.i( "service discovered");
                 mBluetoothLeService.getSupportedGattServices();
                 // this spawn recurrent async tasks with volley
                 selfDriving.start(MainActivity.this);
@@ -441,7 +442,7 @@ public class MainActivity extends AppCompatActivity implements OnBluetoothDevice
                 ByteBuffer buffer = ByteBuffer.wrap(data);
                 buffer.order(ByteOrder.LITTLE_ENDIAN);
                 float received = buffer.getFloat();
-                Log.i("MainActivity", "BLE notify " + received);
+                logger.i( "BLE notify " + received);
                 selfDriving.receiveBLData(received);
             }
         }
@@ -449,7 +450,7 @@ public class MainActivity extends AppCompatActivity implements OnBluetoothDevice
 
 
     public void btSendBytes(byte[] data) {
-        Log.i("alex", String.valueOf(data));
+        logger.i("btSendBytes"+ String.valueOf(data));
         if (mBluetoothLeService != null &&
                 mConnectionState.equals(BluetoothLeService.ACTION_GATT_CONNECTED)) {
             mBluetoothLeService.writeCharacteristic(data);
@@ -459,7 +460,7 @@ public class MainActivity extends AppCompatActivity implements OnBluetoothDevice
     private class MyBluetoothScanCallBack implements BluetoothScan.BluetoothScanCallBack {
         @Override
         public void onLeScanInitFailure(int failureCode) {
-            Log.i("MainActivity", "onLeScanInitFailure()");
+            logger.i( "onLeScanInitFailure()");
             switch (failureCode) {
                 case BluetoothScan.SCAN_FEATURE_ERROR:
                     showMsg("scan_feature_error");
@@ -474,10 +475,10 @@ public class MainActivity extends AppCompatActivity implements OnBluetoothDevice
 
         @Override
         public void onLeScanInitSuccess(int successCode) {
-            Log.i("MainActivity", "onLeScanInitSuccess()");
+            logger.i( "onLeScanInitSuccess()");
             switch (successCode) {
                 case BluetoothScan.SCAN_BEGIN_SCAN:
-                    Log.i("MainActivity", "successCode : " + successCode);
+                    logger.i( "successCode : " + successCode);
                     break;
                 case BluetoothScan.SCAN_NEED_ENADLE:
                     Intent enableBtIntent = new Intent(BluetoothAdapter.ACTION_REQUEST_ENABLE);
@@ -492,16 +493,16 @@ public class MainActivity extends AppCompatActivity implements OnBluetoothDevice
         }
 
         @Override
-        public void onLeScanResult(BluetoothDevice device, int rssi, byte[] scanRecord) {
+        public void onLeScanResult(BluetoothDevice device, int rssi, ScanRecord scanRecord) {
             if (!mBluetoothDeviceList.contains(device) && device != null) {
                 mBluetoothDeviceList.add(device);
                 mBluetoothDeviceAdapter.notifyDataSetChanged();
 
-                Log.i("MainActivity", "notifyDataSetChanged() " + "BluetoothName :　" + device.getName() +
+                logger.i( "notifyDataSetChanged() " + "BluetoothName :　" + device.getName() +
                         "  BluetoothAddress :　" + device.getAddress());
 
                 if ("MyESP32".equals(device.getName())) {
-                    Log.i("alex", "we connected to MyESP32.. automatically connecting");
+                    logger.i( "we connected to MyESP32.. automatically connecting");
 
                     if (mBluetoothLeService != null) {
 

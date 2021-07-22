@@ -54,4 +54,5 @@ dependencies {
     implementation("com.squareup.okhttp3:logging-interceptor")
     implementation "com.google.android.gms:play-services-location:18.0.0"
     implementation "com.datadoghq:dd-sdk-android:1.8.1"
+    implementation 'com.amplifyframework:core:1.18.0'
 }
