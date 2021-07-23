@@ -38,6 +38,8 @@ import android.view.MenuItem;
 import android.view.View;
 import android.widget.ProgressBar;
 import android.widget.TextView;
+
+import androidx.appcompat.app.AppCompatActivity;
 import androidx.recyclerview.widget.GridLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 import androidx.swiperefreshlayout.widget.SwipeRefreshLayout;
@@ -275,11 +277,11 @@ public class MainActivity extends AppCompatActivity implements OnBluetoothDevice
             }
 
         } else if (event.sensor.getType() == Sensor.TYPE_AMBIENT_TEMPERATURE) {
-            this.logger.i("[androidTemperature] onSensorChanged");
+            //this.logger.i("[androidTemperature] onSensorChanged");
             temperature = event.values[0];
             logger.i(String.valueOf(temperature));
             temprature_count += 1;
-            if (temprature_count == 2) {
+            if (temprature_count == 200) {
                 class sendDataTask extends AsyncTask<Void, Void, Boolean> {
                     @Override
                     protected Boolean doInBackground(Void... voids) {
@@ -300,12 +302,12 @@ public class MainActivity extends AppCompatActivity implements OnBluetoothDevice
                 temprature_count = 0;
             }
         } else if (event.sensor.getType() == Sensor.TYPE_MAGNETIC_FIELD) {
-            this.logger.i("[androidMagneticfield] onSensorChanged");
+            //this.logger.i("[androidMagneticfield] onSensorChanged");
             magnetic_x = event.values[0];
             magnetic_y = event.values[1];
             magnetic_z = event.values[2];
             magnetometercount_count += 1;
-            if (magnetometercount_count == 2) {
+            if (magnetometercount_count == 200) {
                 class sendDataTask extends AsyncTask<Void, Void, Boolean> {
                     @Override
                     protected Boolean doInBackground(Void... voids) {
@@ -328,10 +330,10 @@ public class MainActivity extends AppCompatActivity implements OnBluetoothDevice
                 magnetometercount_count = 0;
             }
         } else if (event.sensor.getType() == Sensor.TYPE_PROXIMITY) {
-            this.logger.i("[androidProximity] onSensorChanged");
+            //this.logger.i("[androidProximity] onSensorChanged");
             Proximity_x = event.values[0];
             Proximity_count += 1;
-            if (Proximity_count == 2) {
+            if (Proximity_count == 200) {
                 class sendDataTask extends AsyncTask<Void, Void, Boolean> {
                     @Override
                     protected Boolean doInBackground(Void... voids) {
@@ -353,10 +355,10 @@ public class MainActivity extends AppCompatActivity implements OnBluetoothDevice
             }
         }
         else if (event.sensor.getType() == Sensor.TYPE_LIGHT) {
-            this.logger.i("[androidLight] onSensorChanged");
+            //this.logger.i("[androidLight] onSensorChanged");
             Light_x = event.values[0];
             Light_count += 1;
-            if (Light_count == 2) {
+            if (Light_count == 200) {
                 class sendDataTask extends AsyncTask<Void, Void, Boolean> {
                     @Override
                     protected Boolean doInBackground(Void... voids) {
@@ -378,12 +380,12 @@ public class MainActivity extends AppCompatActivity implements OnBluetoothDevice
             }
         }
         else if (event.sensor.getType() == Sensor.TYPE_GRAVITY) {
-            this.logger.i("[androidGravity] onSensorChanged");
+            //this.logger.i("[androidGravity] onSensorChanged");
             gravity_x = event.values[0];
             gravity_y = event.values[1];
             gravity_z = event.values[2];
             gravity_count += 1;
-            if (gravity_count == 2) {
+            if (gravity_count == 200) {
                 class sendDataTask extends AsyncTask<Void, Void, Boolean> {
                     @Override
                     protected Boolean doInBackground(Void... voids) {
