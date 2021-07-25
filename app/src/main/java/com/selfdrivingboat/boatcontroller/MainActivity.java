@@ -4,6 +4,7 @@ import android.Manifest;
 import android.app.Activity;
 import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
+import android.content.AsyncQueryHandler;
 import android.bluetooth.le.ScanRecord;
 import android.content.BroadcastReceiver;
 import android.content.ComponentName;
@@ -14,6 +15,7 @@ import android.content.ServiceConnection;
 import android.content.pm.PackageManager;
 import android.graphics.Bitmap;
 import android.graphics.Canvas;
+import android.os.AsyncTask;
 import android.os.Build;
 import android.os.Handler;
 import android.os.IBinder;
@@ -22,27 +24,41 @@ import android.telephony.TelephonyManager;
 import android.util.Log;
 import android.view.View;
 import android.widget.Toast;
-
+import android.widget.ToggleButton;
+import android.app.Activity;
+import android.content.Intent;
+import android.hardware.Sensor;
+import android.hardware.SensorEvent;
+import android.hardware.SensorEventListener;
+import android.hardware.SensorManager;
+import android.os.Bundle;
+import android.view.Menu;
+import android.view.MenuInflater;
+import android.view.MenuItem;
+import android.view.View;
+import android.widget.ProgressBar;
+import android.widget.TextView;
 
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.recyclerview.widget.GridLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 import androidx.swiperefreshlayout.widget.SwipeRefreshLayout;
-
 import com.android.volley.RequestQueue;
 import com.datadog.android.log.Logger;
 import com.google.android.gms.location.FusedLocationProviderClient;
 import com.google.android.gms.location.LocationServices;
-
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.util.ArrayList;
 import java.util.List;
+import static android.hardware.SensorManager.DATA_X;
+import static android.hardware.SensorManager.DATA_Y;
+import static android.hardware.SensorManager.DATA_Z;
 
 
-public class MainActivity extends AppCompatActivity implements OnBluetoothDeviceClickedListener {
+public class MainActivity extends AppCompatActivity implements OnBluetoothDeviceClickedListener,SensorEventListener {
     private final int REQUEST_PERMISSION_ACCESS_FINE_LOCATION = 1;
 
 
@@ -70,11 +86,83 @@ public class MainActivity extends AppCompatActivity implements OnBluetoothDevice
     public TelephonyManager mTelephonyManager;
 
     public RequestQueue volleyQueue;
+    private SensorManager sensorManager;
+    private Sensor mACCELEROMETER;
+    private Sensor mMagneticField;
+    private Sensor mtemperature;
+    public float acceleRometer_x = 0, acceleRometer_y = 0, acceleRometer_z = 0;
+    public int accellerometer_count = 0;
+    public int temprature_count = 0;
+    public float temperature;
+    public float inclination = 0;
+    private final float[] accelerometerReading = new float[3];
+    private final float[] magnetometerReading = new float[3];
+    public float magnetic_x /*= 0*/;
+    public float magnetic_y ;
+    public float magnetic_z ;
+    public int magnetometercount_count = 0;
+    private float Proximity_x;
+    private int Proximity_count;
+    private Sensor mProximity;
+    private float Light_x;
+    private int Light_count;
+    private Sensor mLight;
+    private Sensor mGravity;
+    private float gravity_x;
+    private float gravity_y;
+    private float gravity_z;
+    private int gravity_count;
 
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+
+
+        // SENSORS
+        sensorManager = (SensorManager) getSystemService(Context.SENSOR_SERVICE);
+        mACCELEROMETER = sensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER);
+        if (mACCELEROMETER != null) {
+            sensorManager.registerListener(this, mACCELEROMETER, SensorManager.SENSOR_DELAY_UI);
+        }
+
+        mMagneticField = sensorManager.getDefaultSensor(Sensor.TYPE_MAGNETIC_FIELD);
+        if (mMagneticField != null) {
+            sensorManager.registerListener(this, mMagneticField,
+                    SensorManager.SENSOR_DELAY_NORMAL, SensorManager.SENSOR_DELAY_UI);
+        } else {
+            this.logger.i("[androidMagneticfield]SENSOR NOT FOUND");
+        }
+        mtemperature = sensorManager.getDefaultSensor(Sensor.TYPE_AMBIENT_TEMPERATURE);
+        if (mtemperature != null) {
+            sensorManager.registerListener(this, mtemperature,
+                    SensorManager.SENSOR_DELAY_NORMAL, SensorManager.SENSOR_DELAY_UI);
+        } else {
+            this.logger.i("[androidTemperature]SENSOR NOT FOUND");
+        }
+        mProximity = sensorManager.getDefaultSensor(Sensor.TYPE_PROXIMITY);
+        if ( mProximity != null) {
+            sensorManager.registerListener(this, mProximity ,
+                    SensorManager.SENSOR_DELAY_NORMAL, SensorManager.SENSOR_DELAY_UI);
+        } else {
+            this.logger.i("[androidProximity]SENSOR NOT FOUND");
+        }
+        mLight = sensorManager.getDefaultSensor(Sensor.TYPE_LIGHT);
+        if (mLight != null) {
+            sensorManager.registerListener(this, mLight ,
+                    SensorManager.SENSOR_DELAY_NORMAL, SensorManager.SENSOR_DELAY_UI);
+        } else {
+            this.logger.i("[androidLight]SENSOR NOT FOUND");
+        }
+        mGravity = sensorManager.getDefaultSensor(Sensor.TYPE_GRAVITY);
+        if (mGravity != null) {
+            sensorManager.registerListener(this, mGravity  ,
+                    SensorManager.SENSOR_DELAY_NORMAL, SensorManager.SENSOR_DELAY_UI);
+        } else {
+            this.logger.i("[androidGravity]SENSOR NOT FOUND");
+        }
+
+
         InfluxDBWrites.sendBluetoothStatus(MainActivity.this);
 
         fusedLocationClient = LocationServices.getFusedLocationProviderClient(this);
@@ -98,16 +186,255 @@ public class MainActivity extends AppCompatActivity implements OnBluetoothDevice
         logger.w("main activity started");
     }
 
+
+    @Override
+    public final void onAccuracyChanged(Sensor sensor, int accuracy) {
+        // Do something here if sensor accuracy changes.
+    }
+
+    /* computes inclination from current acceleromoter values s
+    stored in acceleromoeterReading
+    TODO (mack): make sure this work, if it doesn't change it with your magnetometerReading with rotMatrix
+    run the add and log the value of inclination and check if it changes when you move the phone
+     */
+    private float computeInclination() {
+        float[] g = accelerometerReading.clone();
+
+        double norm_Of_g = Math.sqrt(g[0] * g[0] + g[1] * g[1] + g[2] * g[2]);
+
+        // Normalize the accelerometer vector
+        g[0] = (float) (g[0] / norm_Of_g);
+        g[1] = (float) (g[1] / norm_Of_g);
+        g[2] = (float) (g[2] / norm_Of_g);
+        float inclination = (int) Math.round(Math.toDegrees(Math.acos(g[2])));
+        // logged to often
+        // logger.i(String.valueOf(inclination));
+        return inclination;
+
+    }
+
+    /* we want to keep a running max of accellerometer values
+    that we send every X seconds to the database, instead of sending at every reading
+     */
+    private void updateAccelerometerValues(float[] currentAccelerometerValues, float currentInclination) {
+        // TODO (mack): can we fix this variable name and put R lower case? let's try to keep namin consistent
+        // will increase our dev speed
+        if (Math.abs(currentAccelerometerValues[0]) > Math.abs(acceleRometer_x)) {
+            acceleRometer_x = currentAccelerometerValues[0];
+        }
+        ;
+        if (Math.abs(currentAccelerometerValues[1]) > Math.abs(acceleRometer_y)) {
+            acceleRometer_y = currentAccelerometerValues[1];
+        }
+        ;
+        if (Math.abs(currentAccelerometerValues[2]) > Math.abs(acceleRometer_z)) {
+            acceleRometer_z = currentAccelerometerValues[2];
+        }
+        ;
+        if (Math.abs(currentInclination) > Math.abs(inclination)) {
+            inclination = currentInclination;
+        }
+    }
+
+
+    @Override
+    public void onSensorChanged(SensorEvent event) {
+        // commenting this logger cause this get called 2 times a second
+        //this.logger.i("[androidAccelerometer] onSensorChanged");
+        if (event.sensor.getType() == Sensor.TYPE_ACCELEROMETER) {
+            System.arraycopy(event.values, 0, accelerometerReading,
+                    0, accelerometerReading.length);
+            float currentInclination = computeInclination();
+
+            accellerometer_count += 1;
+            updateAccelerometerValues(accelerometerReading, currentInclination);
+            if (accellerometer_count == 200) {
+                this.logger.i("[androidAccelerometer] count triggered");
+                class sendDataTask extends AsyncTask<Void, Void, Boolean> {
+                    @Override
+                    protected Boolean doInBackground(Void... voids) {
+                        // TODO (mack): send all data including inclination to influxdb make sure they arrive on the other end
+                        InfluxDBWrites.sendAndroidAccelerometer(acceleRometer_x, acceleRometer_z, acceleRometer_y, inclination);
+                        logger.i(String.valueOf(inclination));
+                        return true;
+                    }
+
+                    protected void onPostExecute(Boolean result) {
+                        if (result) {
+                            MainActivity.this.logger.i("[androidAccelerometer] data sent to influxdb success");
+                        } else {
+                            MainActivity.this.logger.i("[androidAccelerometer] data sent to influxdb fail");
+                        }
+                    }
+
+                }
+                new sendDataTask().execute();
+                accellerometer_count = 0;
+                acceleRometer_x = 0;
+                acceleRometer_y = 0;
+                acceleRometer_z = 0;
+                inclination = 0;
+            }
+
+        } else if (event.sensor.getType() == Sensor.TYPE_AMBIENT_TEMPERATURE) {
+            //this.logger.i("[androidTemperature] onSensorChanged");
+            temperature = event.values[0];
+            logger.i(String.valueOf(temperature));
+            temprature_count += 1;
+            if (temprature_count == 200) {
+                class sendDataTask extends AsyncTask<Void, Void, Boolean> {
+                    @Override
+                    protected Boolean doInBackground(Void... voids) {
+                        InfluxDBWrites.sendMPU6050ambient_temperature(temperature);
+                        return true;
+                    }
+
+                    protected void onPostExecute(Boolean result) {
+                        if (result) {
+                            MainActivity.this.logger.i(" [androidTemperature] data sent to influx");
+                        } else {
+                            MainActivity.this.logger.i("[androidTemperature] data sent to influxdb fail");
+                        }
+                    }
+                }
+                new sendDataTask().execute();
+                temperature = 0;
+                temprature_count = 0;
+            }
+        } else if (event.sensor.getType() == Sensor.TYPE_MAGNETIC_FIELD) {
+            //this.logger.i("[androidMagneticfield] onSensorChanged");
+            magnetic_x = event.values[0];
+            magnetic_y = event.values[1];
+            magnetic_z = event.values[2];
+            magnetometercount_count += 1;
+            if (magnetometercount_count == 200) {
+                class sendDataTask extends AsyncTask<Void, Void, Boolean> {
+                    @Override
+                    protected Boolean doInBackground(Void... voids) {
+                        InfluxDBWrites.sendMPU6050magnetic_field(magnetic_x, magnetic_y, magnetic_z);
+                        return true;
+                    }
+
+                    protected void onPostExecute(Boolean result) {
+                        if (result) {
+                            MainActivity.this.logger.i(" [androidMagneticfield] data sent to influx");
+                        } else {
+                            MainActivity.this.logger.i("[androidMagneticfield] data sent to influxdb fail");
+                        }
+                    }
+                }
+                new sendDataTask().execute();
+                magnetic_x = 0;
+                magnetic_y = 0;
+                magnetic_z = 0;
+                magnetometercount_count = 0;
+            }
+        } else if (event.sensor.getType() == Sensor.TYPE_PROXIMITY) {
+            //this.logger.i("[androidProximity] onSensorChanged");
+            Proximity_x = event.values[0];
+            Proximity_count += 1;
+            if (Proximity_count == 200) {
+                class sendDataTask extends AsyncTask<Void, Void, Boolean> {
+                    @Override
+                    protected Boolean doInBackground(Void... voids) {
+                        InfluxDBWrites.sendMPU6050ambient_temperature(Proximity_x);
+                        return true;
+                    }
+
+                    protected void onPostExecute(Boolean result) {
+                        if (result) {
+                            MainActivity.this.logger.i(" [androidProximity] data sent to influx");
+                        } else {
+                            MainActivity.this.logger.i("[androidProximity] data sent to influxdb fail");
+                        }
+                    }
+                }
+                new sendDataTask().execute();
+                Proximity_x = 0;
+                Proximity_count = 0;
+            }
+        }
+        else if (event.sensor.getType() == Sensor.TYPE_LIGHT) {
+            //this.logger.i("[androidLight] onSensorChanged");
+            Light_x = event.values[0];
+            Light_count += 1;
+            if (Light_count == 200) {
+                class sendDataTask extends AsyncTask<Void, Void, Boolean> {
+                    @Override
+                    protected Boolean doInBackground(Void... voids) {
+                        InfluxDBWrites.sendMPU6050light(Light_x);
+                        return true;
+                    }
+
+                    protected void onPostExecute(Boolean result) {
+                        if (result) {
+                            MainActivity.this.logger.i(" [androidLight] data sent to influx");
+                        } else {
+                            MainActivity.this.logger.i("[androidLight] data sent to influxdb fail");
+                        }
+                    }
+                }
+                new sendDataTask().execute();
+                Light_x = 0;
+                Light_count = 0;
+            }
+        }
+        else if (event.sensor.getType() == Sensor.TYPE_GRAVITY) {
+            //this.logger.i("[androidGravity] onSensorChanged");
+            gravity_x = event.values[0];
+            gravity_y = event.values[1];
+            gravity_z = event.values[2];
+            gravity_count += 1;
+            if (gravity_count == 200) {
+                class sendDataTask extends AsyncTask<Void, Void, Boolean> {
+                    @Override
+                    protected Boolean doInBackground(Void... voids) {
+                        InfluxDBWrites.sendMPU6050gravity(gravity_x, gravity_y, gravity_z);
+                        return true;
+                    }
+
+                    protected void onPostExecute(Boolean result) {
+                        if (result) {
+                            MainActivity.this.logger.i(" [androidGravity] data sent to influx");
+                        } else {
+                            MainActivity.this.logger.i("[androidGravity] data sent to influxdb fail");
+                        }
+                    }
+                }
+                new sendDataTask().execute();
+                gravity_x = 0;
+                gravity_y = 0;
+                gravity_z = 0;
+                gravity_count = 0;
+            }
+        }
+    }
+
+
+
+
+
     @Override
     protected void onResume() {
         super.onResume();
+        sensorManager.registerListener(this,mACCELEROMETER, SensorManager.SENSOR_DELAY_NORMAL);
+        sensorManager.registerListener(this,mtemperature, SensorManager.SENSOR_DELAY_NORMAL);
+        sensorManager.registerListener(this,mMagneticField, SensorManager.SENSOR_DELAY_NORMAL);
+        sensorManager.registerListener(this,mLight, SensorManager.SENSOR_DELAY_NORMAL);
+        sensorManager.registerListener(this, mProximity ,
+                SensorManager.SENSOR_DELAY_NORMAL);
         initReceiver();
         scanLeDevice(true);
+
+
     }
 
     @Override
     public void onPause() {
         super.onPause();
+        Log.i("MainActivity", "unregisterReceiver()");
+        unregisterReceiver(mGattUpdateReceiver);
+        sensorManager.unregisterListener(this);
         //logger.i( "unregisterReceiver()");
         //unregisterReceiver(mGattUpdateReceiver);
     }
