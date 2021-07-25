@@ -370,17 +370,13 @@ public class SelfDriving {
             @Override
             protected Boolean doInBackground(Void... voids) {
                 activity.logger.i( "sending influxdb bluetooth data.. doInBackground");
+                // WARNING: if you add some data here you need to increase data_size
+                // or the app breaks with out of bound exception
                 InfluxDBWrites.sendMPU6050Accelerometer(data[0], data[1], data[2]);
                 InfluxDBWrites.sendMPU6050Gyroscope(data[3], data[4], data[5]);
                 InfluxDBWrites.sendMPU6050Angle(data[6], data[7]);
                 InfluxDBWrites.sendMPU6050Temperature(data[8]);
                 InfluxDBWrites.sendBatteryLevel(data[9]);
-                InfluxDBWrites.sendAndroidAccelerometer(data[10], data[11], data[12],data[13]);
-                InfluxDBWrites.sendMPU6050ambient_temperature(data[14]);
-                InfluxDBWrites.sendMPU6050magnetic_field(data[15], data[16], data[17]);
-                InfluxDBWrites.sendMPU6050proximity(data[18]);
-                InfluxDBWrites.sendMPU6050light(data[19]);
-                InfluxDBWrites.sendMPU6050gravity(data[20], data[21], data[22]);
                 if (locations != null && !locations.isEmpty()) {
                     InfluxDBWrites.sendGPS(locations.get(locations.size() - 1));
                 }
