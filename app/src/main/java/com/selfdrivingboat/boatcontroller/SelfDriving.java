@@ -45,7 +45,7 @@ public class SelfDriving {
     int clock = 10;
     boolean testing_motors = false;
     int data_cursor = 0;
-    int data_size = 23;
+    int data_size = 10;
     float[] data = new float[data_size];
     float GPS_target_latitude;
     float GPS_target_longitude;
@@ -379,12 +379,6 @@ public class SelfDriving {
                 InfluxDBWrites.sendMPU6050Angle(data[6], data[7]);
                 InfluxDBWrites.sendMPU6050Temperature(data[8]);
                 InfluxDBWrites.sendBatteryLevel(data[9]);
-                InfluxDBWrites.sendAndroidAccelerometer(data[10], data[11], data[12],data[13]);
-                InfluxDBWrites.sendMPU6050ambient_temperature(data[14]);
-                InfluxDBWrites.sendMPU6050magnetic_field(data[15], data[16], data[17]);
-                InfluxDBWrites.sendMPU6050proximity(data[18]);
-                InfluxDBWrites.sendMPU6050light(data[19]);
-                InfluxDBWrites.sendMPU6050gravity(data[20], data[21], data[22]);
                 if (locations != null && !locations.isEmpty()) {
                     InfluxDBWrites.sendGPS(locations.get(locations.size() - 1));
                 }
