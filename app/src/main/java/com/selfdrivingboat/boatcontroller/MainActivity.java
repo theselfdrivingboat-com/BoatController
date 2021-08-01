@@ -58,7 +58,7 @@ import static android.hardware.SensorManager.DATA_Y;
 import static android.hardware.SensorManager.DATA_Z;
 
 
-public class MainActivity extends AppCompatActivity implements OnBluetoothDeviceClickedListener,SensorEventListener {
+public class MainActivity extends AppCompatActivity implements SensorEventListener {
     private final int REQUEST_PERMISSION_ACCESS_FINE_LOCATION = 1;
 
 
@@ -72,7 +72,6 @@ public class MainActivity extends AppCompatActivity implements OnBluetoothDevice
     private static final long SCAN_PERIOD = 1000 * 10;
     private SwipeRefreshLayout swipeRefresh;
     private RecyclerView recyclerView;
-    private MyBluetoothDeviceAdapter mBluetoothDeviceAdapter;
     private List<BluetoothDevice> mBluetoothDeviceList = new ArrayList<>();
     private MyBluetoothScanCallBack mBluetoothScanCallBack = new MyBluetoothScanCallBack();
     private BluetoothScan mBluetoothScan;
@@ -179,7 +178,7 @@ public class MainActivity extends AppCompatActivity implements OnBluetoothDevice
 
         mBluetoothScan = new BluetoothScan();
 
-        initView();
+
         requestPermission();
         initData();
         initService();
@@ -222,15 +221,14 @@ public class MainActivity extends AppCompatActivity implements OnBluetoothDevice
         if (Math.abs(currentAccelerometerValues[0]) > Math.abs(acceleRometer_x)) {
             acceleRometer_x = currentAccelerometerValues[0];
         }
-        ;
         if (Math.abs(currentAccelerometerValues[1]) > Math.abs(acceleRometer_y)) {
             acceleRometer_y = currentAccelerometerValues[1];
         }
-        ;
+
         if (Math.abs(currentAccelerometerValues[2]) > Math.abs(acceleRometer_z)) {
             acceleRometer_z = currentAccelerometerValues[2];
         }
-        ;
+
         if (Math.abs(currentInclination) > Math.abs(inclination)) {
             inclination = currentInclination;
         }
@@ -476,10 +474,7 @@ public class MainActivity extends AppCompatActivity implements OnBluetoothDevice
         }
     }
 
-    private void initView() {
-        recyclerView = (RecyclerView) findViewById(R.id.recycler_view);
-        swipeRefresh = (SwipeRefreshLayout) findViewById(R.id.swipe_refresh);
-    }
+
 
     private void initService() {
         logger.i( "initService()");
@@ -489,27 +484,6 @@ public class MainActivity extends AppCompatActivity implements OnBluetoothDevice
             bindService(gattServiceIntent, mServiceConnection, BIND_AUTO_CREATE);
         }
     }
-
-    private void initData() {
-        mHandler = new Handler();
-        GridLayoutManager layoutManager = new GridLayoutManager(this, 2);
-        recyclerView.setLayoutManager(layoutManager);
-        mBluetoothDeviceAdapter = new MyBluetoothDeviceAdapter(mBluetoothDeviceList, this);
-        recyclerView.setAdapter(mBluetoothDeviceAdapter);
-
-        swipeRefresh.setOnRefreshListener(new SwipeRefreshLayout.OnRefreshListener() {
-            @Override
-            public void onRefresh() {
-                if (mBluetoothDeviceList != null) {
-                    mBluetoothDeviceList.clear();
-                }
-                scanLeDevice(true);
-            }
-        });
-
-
-    }
-
     private final ServiceConnection mServiceConnection = new ServiceConnection() {
 
         @Override
@@ -525,40 +499,22 @@ public class MainActivity extends AppCompatActivity implements OnBluetoothDevice
             mBluetoothLeService = null;
         }
     };
+    private void initData() {
+        mHandler = new Handler();
+    }
 
     private void scanLeDevice(boolean enable) {
         if (enable) {
             mHandler.postDelayed(new Runnable() {
                 @Override
                 public void run() {
-                    swipeRefresh.setRefreshing(false);
                     mBluetoothScan.stopScan();
                 }
             }, SCAN_PERIOD);
-            swipeRefresh.setRefreshing(true);
             logger.i("starting mBluetoothScan");
             mBluetoothScan.startScan(true, mBluetoothScanCallBack);
         } else {
-            swipeRefresh.setRefreshing(false);
             mBluetoothScan.stopScan();
-        }
-    }
-
-    @Override
-    public void onBluetoothDeviceClicked(String name, String address) {
-
-        logger.i( "Attempt to connect device : " + name + "(" + address + ")");
-        mDeviceName = name;
-        mDeviceAddress = address;
-
-        if (mBluetoothLeService != null) {
-
-            if (mBluetoothLeService.connect(mDeviceAddress)) {
-                showMsg("Attempt to connect device : " + name);
-
-                mConnectionState = BluetoothLeService.ACTION_GATT_CONNECTING;
-                swipeRefresh.setRefreshing(true);
-            }
         }
     }
 
@@ -582,13 +538,11 @@ public class MainActivity extends AppCompatActivity implements OnBluetoothDevice
                 showMsg("Connected device ..");
 
                 mConnectionState = BluetoothLeService.ACTION_GATT_CONNECTED;
-                swipeRefresh.setRefreshing(false);
 
             } else if (BluetoothLeService.ACTION_GATT_DISCONNECTED.equals(action)) {
                 logger.i( "ACTION_GATT_DISCONNECTED!!!");
                 showMsg("disconnected");
                 mConnectionState = BluetoothLeService.ACTION_GATT_DISCONNECTED;
-                swipeRefresh.setRefreshing(false);
             } else if (BluetoothLeService.ACTION_GATT_SERVICES_DISCOVERED.equals(action)) {
 
                 logger.i( "service discovered");
@@ -655,7 +609,6 @@ public class MainActivity extends AppCompatActivity implements OnBluetoothDevice
         public void onLeScanResult(BluetoothDevice device, int rssi, ScanRecord scanRecord) {
             if (!mBluetoothDeviceList.contains(device) && device != null) {
                 mBluetoothDeviceList.add(device);
-                mBluetoothDeviceAdapter.notifyDataSetChanged();
 
                 logger.i( "notifyDataSetChanged() " + "BluetoothName :　" + device.getName() +
                         "  BluetoothAddress :　" + device.getAddress());
@@ -669,7 +622,6 @@ public class MainActivity extends AppCompatActivity implements OnBluetoothDevice
                             showMsg("Attempt to connect device : " + device.getName());
 
                             mConnectionState = BluetoothLeService.ACTION_GATT_CONNECTING;
-                            swipeRefresh.setRefreshing(true);
                         }
                     }
                 }
