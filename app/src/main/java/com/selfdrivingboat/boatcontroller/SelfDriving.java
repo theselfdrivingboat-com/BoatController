@@ -344,7 +344,9 @@ public class SelfDriving {
             protected Boolean doInBackground(Void... voids) {
                 activity.logger.i( "sending influxdb anroid data.. doInBackground");
                 InfluxDBWrites.sendBluetoothStatus(activity);
+                activity.logger.i( "bluetooth status logging to influx  .. doInBackground");
                 InfluxDBWrites.sendSignalStrength(getSignalStrength());
+                activity.logger.i( "signalstrength logging to influx.. doInBackground");
                 if (locations != null && !locations.isEmpty()) {
                     InfluxDBWrites.sendGPS(locations.get(locations.size() - 1));
                 }
