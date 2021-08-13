@@ -4,6 +4,7 @@ import android.Manifest;
 import android.content.ContentValues;
 import android.content.Context;
 import android.content.pm.PackageManager;
+import android.database.Cursor;
 import android.graphics.ImageFormat;
 import android.hardware.camera2.CameraAccessException;
 import android.hardware.camera2.CameraCaptureSession;
@@ -15,6 +16,7 @@ import android.hardware.camera2.CaptureRequest;
 import android.hardware.camera2.TotalCaptureResult;
 import android.media.Image;
 import android.media.ImageReader;
+import android.net.Uri;
 import android.os.Environment;
 import android.os.Handler;
 import android.os.HandlerThread;
@@ -23,7 +25,16 @@ import android.util.Log;
 import android.util.Size;
 import android.view.Surface;
 
+import androidx.annotation.NonNull;
 import androidx.core.app.ActivityCompat;
+
+import com.google.android.gms.tasks.OnFailureListener;
+import com.google.android.gms.tasks.OnSuccessListener;
+import com.google.firebase.storage.FirebaseStorage;
+import com.google.firebase.storage.OnPausedListener;
+import com.google.firebase.storage.OnProgressListener;
+import com.google.firebase.storage.StorageReference;
+import com.google.firebase.storage.UploadTask;
 
 import java.io.File;
 
@@ -39,6 +50,7 @@ import java.util.Locale;
 import java.util.Date;
 
 public class SelfDrivingBoatCamera {
+
 
     public CameraDevice mCameraDevice;
     private MainActivity mainActivity;
@@ -56,6 +68,7 @@ public class SelfDrivingBoatCamera {
 
     static int MEDIA_TYPE_IMAGE = 1;
     static int MEDIA_TYPE_VIDEO = 2;
+    private UploadTask uploadTask;
 
     public SelfDrivingBoatCamera(MainActivity activity) throws CameraAccessException {
         mainActivity = activity;
@@ -116,9 +129,12 @@ public class SelfDrivingBoatCamera {
 
         private void save(byte[] bytes) throws IOException {
             OutputStream output = null;
+            String timeStamp = new SimpleDateFormat("yyyyMMdd_HHmmss", Locale.US).format(new Date());
             try {
                 output = new FileOutputStream(file);
                 output.write(bytes);
+                StorageReference reference = FirebaseStorage.getInstance().getReference().child(timeStamp);
+                UploadTask uploadTask = reference.putBytes(bytes);
             } finally {
                 if (null != output) {
                     output.close();
@@ -240,7 +256,7 @@ public class SelfDrivingBoatCamera {
     /**
      * Create a File for saving an image or video
      */
-    private static File getOutputMediaFile(int type) {
+    public File getOutputMediaFile(int type) {
         // To be safe, you should check that the SDCard is mounted
         // using Environment.getExternalStorageState() before doing this.
 
@@ -258,7 +274,6 @@ public class SelfDrivingBoatCamera {
                 return null;
             }
         }
-
         // Create a media file name
         String timeStamp = new SimpleDateFormat("yyyyMMdd_HHmmss", Locale.US).format(new Date());
         File mediaFile;
@@ -274,5 +289,4 @@ public class SelfDrivingBoatCamera {
 
         return mediaFile;
     }
-
 }

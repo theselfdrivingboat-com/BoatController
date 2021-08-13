@@ -1,3 +1,4 @@
+
 package com.selfdrivingboat.boatcontroller;
 
 import android.Manifest;
@@ -14,6 +15,8 @@ import android.content.ServiceConnection;
 import android.content.pm.PackageManager;
 import android.graphics.Bitmap;
 import android.graphics.Canvas;
+import android.hardware.camera2.CameraAccessException;
+import android.net.Uri;
 import android.os.Build;
 import android.os.Handler;
 import android.os.IBinder;
@@ -35,6 +38,7 @@ import android.widget.Toast;
 import android.widget.ToggleButton;
 
 
+import androidx.annotation.NonNull;
 import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.app.ActivityCompat;
@@ -42,26 +46,38 @@ import androidx.recyclerview.widget.GridLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 import androidx.swiperefreshlayout.widget.SwipeRefreshLayout;
 
+import com.amplifyframework.AmplifyException;
+import com.amplifyframework.core.Amplify;
 import com.android.volley.RequestQueue;
 import com.datadog.android.log.Logger;
 import com.google.android.gms.location.FusedLocationProviderClient;
 import com.google.android.gms.location.LocationRequest;
 import com.google.android.gms.location.LocationServices;
+import com.google.android.gms.tasks.OnFailureListener;
+import com.google.android.gms.tasks.OnSuccessListener;
+import com.google.firebase.auth.AuthResult;
+import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.auth.FirebaseUser;
+import com.google.firebase.storage.FirebaseStorage;
+import com.google.firebase.storage.StorageReference;
 
 import org.json.JSONException;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
+import java.io.StringWriter;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 
+import static com.selfdrivingboat.boatcontroller.SelfDrivingBoatCamera.*;
+
+
 
 public class MainActivity extends AppCompatActivity implements OnBluetoothDeviceClickedListener {
     private final int REQUEST_PERMISSION_ACCESS_FINE_LOCATION = 1;
-
 
     private static final int REQUEST_CONNECT = 1;
     private static final int PERMISSION_REQUEST_COARSE_LOCATION = 2;
@@ -85,7 +101,6 @@ public class MainActivity extends AppCompatActivity implements OnBluetoothDevice
     public FusedLocationProviderClient fusedLocationClient;
     public TelephonyManager mTelephonyManager;
     public SelfDrivingBoatCamera camera;
-
     public RequestQueue volleyQueue;
 
 
@@ -105,13 +120,11 @@ public class MainActivity extends AppCompatActivity implements OnBluetoothDevice
 
         mTelephonyManager = (TelephonyManager) this.getSystemService(Context.TELEPHONY_SERVICE);
 // for example value of first element
-
         initView();
         requestPermission();
         initData();
         initService();
         logger.w("main activity started");
-
         // TEMP CODE TO CALL CAMERA
         try {
             camera = new SelfDrivingBoatCamera(this);
@@ -119,6 +132,7 @@ public class MainActivity extends AppCompatActivity implements OnBluetoothDevice
         } catch (Exception e){
             logger.e(e.getMessage());
         }
+
     }
 
     @Override
@@ -175,6 +189,7 @@ public class MainActivity extends AppCompatActivity implements OnBluetoothDevice
             bindService(gattServiceIntent, mServiceConnection, BIND_AUTO_CREATE);
         }
     }
+
 
     private void initData() {
         mHandler = new Handler();
