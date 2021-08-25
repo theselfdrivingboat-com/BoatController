@@ -96,12 +96,13 @@ public class MainActivity extends AppCompatActivity implements OnBluetoothDevice
     private BluetoothLeService mBluetoothLeService;
     private String mDeviceName;
     private String mDeviceAddress;
-    public Logger logger = DatadogLogger.getInstance();
+    public static Logger logger = DatadogLogger.getInstance();
     private SelfDriving selfDriving = new SelfDriving();
     public FusedLocationProviderClient fusedLocationClient;
     public TelephonyManager mTelephonyManager;
-    public SelfDrivingBoatCamera camera;
+    public static SelfDrivingBoatCamera camera;
     public RequestQueue volleyQueue;
+
 
 
     @Override
@@ -126,9 +127,8 @@ public class MainActivity extends AppCompatActivity implements OnBluetoothDevice
         initService();
         logger.w("main activity started");
         // TEMP CODE TO CALL CAMERA
-        try {
+       try {
             camera = new SelfDrivingBoatCamera(this);
-            camera.takePicture();
         } catch (Exception e){
             logger.e(e.getMessage());
         }
@@ -189,6 +189,18 @@ public class MainActivity extends AppCompatActivity implements OnBluetoothDevice
             bindService(gattServiceIntent, mServiceConnection, BIND_AUTO_CREATE);
         }
     }
+
+
+    public static void callpicture(){
+        try {
+            Log.i("pic", "pic captured");
+            camera.takePicture();
+        } catch (Exception e){
+            logger.e(e.getMessage());
+        }
+    }
+
+
 
 
     private void initData() {
@@ -360,10 +372,11 @@ public class MainActivity extends AppCompatActivity implements OnBluetoothDevice
                 logger.i( "notifyDataSetChanged() " + "BluetoothName :　" + device.getName() +
                         "  BluetoothAddress :　" + device.getAddress());
 
-                camera.takePicture();
+
 
                 if ("MyESP32".equals(device.getName())) {
                     logger.i( "we connected to MyESP32.. automatically connecting");
+                    /*camera.takePicture();*/
 
                     if (mBluetoothLeService != null) {
 

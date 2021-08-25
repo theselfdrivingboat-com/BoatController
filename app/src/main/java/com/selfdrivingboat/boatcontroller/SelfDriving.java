@@ -4,11 +4,14 @@ import android.Manifest;
 import android.content.pm.PackageManager;
 import android.location.Location;
 import android.os.AsyncTask;
+import android.os.Build;
 import android.os.HandlerThread;
 import android.os.Looper;
 import android.telephony.CellInfoGsm;
+import android.telephony.CellInfoLte;
 import android.telephony.CellInfoWcdma;
 import android.telephony.CellSignalStrengthGsm;
+import android.telephony.CellSignalStrengthLte;
 import android.telephony.CellSignalStrengthWcdma;
 import android.util.Log;
 
@@ -35,6 +38,9 @@ import com.google.android.gms.location.LocationCallback;
 import com.google.android.gms.location.LocationRequest;
 import com.google.android.gms.location.LocationResult;
 import com.google.android.gms.tasks.OnSuccessListener;
+
+import static com.selfdrivingboat.boatcontroller.MainActivity.callpicture;
+import static java.security.AccessController.getContext;
 
 public class SelfDriving {
 
@@ -90,6 +96,10 @@ public class SelfDriving {
 
     private void runHerokuCommand(String command) {
         switch (command) {
+            case "REQUEST IMAGE":
+               Log.i("a", "a pic request received");
+                callpicture();
+                break;
             case "FORWARD":
                 boatForward();
                 break;
@@ -105,6 +115,9 @@ public class SelfDriving {
             case "TEST-MOTORS":
                 testing_motors = true;
                 break;
+          /*  case "REQUEST IMAGE":
+                Log.i("image", "request");*/
+
             default:
                 if(command.contains("GPS")){
                     selfDrivingCommand(command);
@@ -280,7 +293,7 @@ public class SelfDriving {
 
 
         // only works with SDK Version 23 or higher
-        if (android.os.Build.VERSION.SDK_INT >= 23) {
+        if (Build.VERSION.SDK_INT >= 23) {
             if (activity.getApplicationContext().checkSelfPermission(Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED || activity.getApplicationContext().checkSelfPermission(Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
                 // permission is not granted
                 Log.e("SiSoLocProvider", "Permission not granted.");
@@ -329,8 +342,8 @@ public class SelfDriving {
             activity.logger.e("PERMISSION ERROR FOR 4G SIGNAL STRENGTH");
             return -1;
         }
-        CellInfoWcdma cellInfoGsm = (CellInfoWcdma) activity.mTelephonyManager.getAllCellInfo().get(0);
-        CellSignalStrengthWcdma cellSignalStrengthGsm = cellInfoGsm.getCellSignalStrength();
+        CellInfoLte cellInfoGsm = (CellInfoLte) activity.mTelephonyManager.getAllCellInfo().get(0);
+        CellSignalStrengthLte cellSignalStrengthGsm = cellInfoGsm.getCellSignalStrength();
         int dbm = cellSignalStrengthGsm.getDbm();
         activity.logger.i("signal strength "+ dbm);
         return dbm;
@@ -397,6 +410,8 @@ public class SelfDriving {
             data_cursor = 0;
         }
     }
+
+
 }
 
 
