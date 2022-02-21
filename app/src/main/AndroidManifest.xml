@@ -1,36 +1,20 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     package="com.selfdrivingboat.boatcontroller">
-
     <uses-permission android:name="android.permission.BLUETOOTH_ADMIN" />
     <uses-permission android:name="android.permission.BLUETOOTH" />
 
-    <!-- Needed only if your app looks for Bluetooth devices.
-         You must add an attribute to this permission, or declare the
-         ACCESS_FINE_LOCATION permission, depending on the results when you
-         check location usage in your app. -->
-    <uses-permission android:name="android.permission.BLUETOOTH_SCAN" />
 
-    <!-- Needed only if your app makes the device discoverable to Bluetooth
-         devices. -->
-    <uses-permission android:name="android.permission.BLUETOOTH_ADVERTISE" />
-
-    <!-- Needed only if your app communicates with already-paired Bluetooth
-         devices. -->
-    <uses-permission android:name="android.permission.BLUETOOTH_CONNECT" />
-
+    <uses-permission android:name="android.permission.CAMERA" />
     <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />
     <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION"/>
     <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION"/>
+    <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.ACCESS_BACKGROUND_LOCATION"/>
-
-    <uses-permission android:name="android.permission.INTERNET"/>
-
-
     <uses-feature android:name="android.hardware.bluetooth_le" />
 
-
     <application
+        android:hardwareAccelerated="true"
         android:name=".MyApplication"
         android:allowBackup="true"
         android:icon="@mipmap/ic_launcher"
@@ -38,7 +22,6 @@
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
         android:theme="@style/AppTheme">
-
         <activity android:name=".MainActivity">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
@@ -47,8 +30,9 @@
             </intent-filter>
         </activity>
 
-        <service android:name=".BluetoothLeService" android:enabled="true"/>
-
+        <service
+            android:name=".BluetoothLeService"
+            android:enabled="true" />
     </application>
 
 </manifest>

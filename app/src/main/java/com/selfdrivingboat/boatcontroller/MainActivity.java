@@ -1,5 +1,6 @@
+//without img without rfres layout
 package com.selfdrivingboat.boatcontroller;
-
+import static com.selfdrivingboat.boatcontroller.SelfDrivingBoatCamera.MEDIA_TYPE_IMAGE;
 import android.Manifest;
 import android.app.Activity;
 import android.bluetooth.BluetoothAdapter;
@@ -73,6 +74,7 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
     private SwipeRefreshLayout swipeRefresh;
     private RecyclerView recyclerView;
     private List<BluetoothDevice> mBluetoothDeviceList = new ArrayList<>();
+    public static SelfDrivingBoatCamera camera;
     private MyBluetoothScanCallBack mBluetoothScanCallBack = new MyBluetoothScanCallBack();
     private BluetoothScan mBluetoothScan;
     private Handler mHandler;
@@ -183,6 +185,13 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
         initData();
         initService();
         logger.w("main activity started");
+        try {
+             camera = new SelfDrivingBoatCamera(this);
+         } catch (Exception e){
+             logger.e(e.getMessage());
+         }
+
+     }
     }
 
 
@@ -503,6 +512,15 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
         mHandler = new Handler();
     }
 
+    public static void callpicture(){
+    try {
+        Log.i("pic", "pic captured");
+        camera.takePicture();
+    } catch (Exception e){
+        logger.e(e.getMessage());
+    }
+}
+
     private void scanLeDevice(boolean enable) {
         if (enable) {
             mHandler.postDelayed(new Runnable() {
@@ -673,5 +691,41 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
         ByteArrayInputStream bs = new ByteArrayInputStream(bitmapdata);
         return bitmap;
     }
+    public static File getOutputMediaFile(int type) {
+    // To be safe, you should check that the SDCard is mounted
+    // using Environment.getExternalStorageState() before doing this.
+
+    //creates a directory in pictures.
+    //File mediaStorageDir = new File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_PICTURES), "MyCameraApp");
+    File mediaStorageDir;
+    if (type == MEDIA_TYPE_IMAGE)
+        mediaStorageDir = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_PICTURES);
+    else
+        mediaStorageDir = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_MOVIES);  // Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS);
+
+    // This location works best if you want the created images to be shared
+    // between applications and persist after your app has been uninstalled.
+
+    // Create the storage directory if it does not exist
+    if (!mediaStorageDir.exists()) {
+        if (!mediaStorageDir.mkdirs()) {
+            Log.i("pic","failed to create directory");
+            return null;
+        }
+    }
+    // Create a media file name
+    String timeStamp = new SimpleDateFormat("yyyyMMdd_HHmmss").format(new Date());
+    File mediaFile;
+    if (type == MEDIA_TYPE_IMAGE) {
+        mediaFile = new File(mediaStorageDir.getPath() + File.separator +
+                "IMG_" + timeStamp + ".jpg");
+    } else if (type == MEDIA_TYPE_VIDEO) {
+        mediaFile = new File(mediaStorageDir.getPath() + File.separator +
+                "VID_" + timeStamp + ".mp4");
+    } else {
+        return null;
+    }
+    return mediaFile;
+  }
 
 }
